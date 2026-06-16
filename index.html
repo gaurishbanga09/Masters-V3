@@ -1,0 +1,2818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Vehicle Master — Safetrax</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,-apple-system,BlinkMacSystemFont,sans-serif;font-size:13px;background:#f0f2f5;color:#1a202c;height:100vh;overflow:hidden}
+
+/* ── Topbar ── */
+.topbar{height:48px;background:#2d3748;display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:fixed;top:0;left:0;right:0;z-index:200}
+.topbar-left{display:flex;align-items:center;gap:14px}
+.topbar-title{color:#a0aec0;font-size:12px;font-weight:500;letter-spacing:.02em}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.site-sel{display:flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.2);border-radius:5px;padding:4px 10px;font-size:12px;color:#e2e8f0;cursor:pointer;background:rgba(255,255,255,.06)}
+.tb-icon{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#cbd5e0}
+.tb-icon:hover{background:rgba(255,255,255,.16)}
+.tb-icon svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.avatar-ring{width:28px;height:28px;border-radius:50%;background:#b7791f;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;cursor:pointer}
+
+/* ── Shell ── */
+.shell{display:flex;height:100vh;padding-top:48px}
+
+/* ── Sidebar ── */
+.sidebar{width:188px;background:#fff;border-right:1px solid #e8ecf0;padding:16px 0;flex-shrink:0;overflow-y:auto;height:100%}
+.sb-head{padding:0 16px}
+.sb-title{font-size:15px;font-weight:700;color:#1a202c;margin-bottom:1px}
+.sb-crumb{font-size:11px;color:#a0aec0;margin-bottom:18px}
+.sb-crumb span{color:#2f855a;font-weight:600}
+.nav-item{display:flex;align-items:center;padding:8px 16px;font-size:12.5px;color:#4a5568;cursor:pointer;border-left:3px solid transparent;transition:all .12s}
+.nav-item:hover{background:#f7fafc;color:#2d3748}
+.nav-item.active{background:#f0fff4;color:#276749;font-weight:600;border-left-color:#38a169}
+
+/* ── Main ── */
+.main{flex:1;overflow:auto;padding:16px 18px}
+
+/* ── Shared buttons ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;font-size:12px;border-radius:6px;cursor:pointer;font-weight:500;border:1px solid #d1d9e0;background:#fff;color:#4a5568;font-family:inherit;transition:all .1s}
+.btn:hover{background:#f7fafc;border-color:#b0bec5}
+.btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.btn-primary{background:#38a169;color:#fff;border-color:#38a169;font-weight:600}
+.btn-primary:hover{background:#2f855a;border-color:#2f855a}
+.btn-primary svg{stroke:#fff}
+.spacer{flex:1}
+
+/* ══════════════════════════════
+   LISTING PAGE
+══════════════════════════════ */
+#page-listing{display:block}
+#page-form{display:none}
+
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.search-wrap{position:relative;width:220px}
+.search-wrap svg{position:absolute;left:8px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:#a0aec0;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.search-wrap input{width:100%;padding:7px 10px 7px 30px;font-size:12px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#2d3748;outline:none;font-family:inherit}
+.search-wrap input:focus{border-color:#68d391;box-shadow:0 0 0 2px rgba(104,211,145,.15)}
+
+.card{background:#fff;border-radius:8px;border:1px solid #e2e8f0;overflow:hidden}
+
+.tabs{display:flex;border-bottom:1px solid #e8ecf0}
+.tab{padding:10px 16px;font-size:12.5px;cursor:pointer;color:#718096;border-bottom:2px solid transparent;display:flex;align-items:center;gap:6px;font-weight:500;transition:all .1s}
+.tab.active{color:#276749;border-bottom-color:#38a169;font-weight:700}
+.tab-n{background:#edf2f7;border-radius:20px;padding:1px 8px;font-size:11px;color:#718096}
+.tab.active .tab-n{background:#c6f6d5;color:#276749}
+
+.stat-bar{display:flex;align-items:center;flex-wrap:wrap;gap:7px;padding:10px 14px;border-bottom:1px solid #f0f2f5}
+.total-label{font-size:12px;color:#718096;display:flex;align-items:center;gap:3px}
+.total-label b{color:#1a202c;font-weight:700}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1.5px solid;white-space:nowrap;cursor:pointer}
+.chip-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.c-inactive{background:#fff5f5;color:#c53030;border-color:#fc8181}
+.c-expiring{background:#fffaf0;color:#c05621;border-color:#f6ad55}
+.c-active{background:#f0fff4;color:#276749;border-color:#68d391}
+.c-temp{background:#ebf8ff;color:#2b6cb0;border-color:#63b3ed}
+.c-compliant{background:#f0fff4;color:#276749;border-color:#68d391}
+.c-noncompliant{background:#fff5f5;color:#c53030;border-color:#fc8181}
+.c-blacklisted{background:#1a202c;color:#e2e8f0;border-color:#4a5568}
+
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:840px}
+thead tr{background:#f7fafc}
+th{padding:9px 12px;text-align:left;font-size:11px;font-weight:600;color:#718096;border-bottom:1px solid #e8ecf0;white-space:nowrap;text-transform:uppercase;letter-spacing:.04em}
+th:last-child{text-align:right}
+td{padding:10px 12px;border-bottom:1px solid #f0f2f5;color:#2d3748;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbfc}
+
+.vn{font-weight:700;font-size:12px;color:#1a202c}
+.vr{display:flex;align-items:center;gap:2px;font-size:11px;color:#c05621;margin-top:2px}
+.star{color:#f6ad55}
+
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1.5px solid;cursor:pointer}
+.b-inactive{background:#fff5f5;color:#c53030;border-color:#fc8181}
+.b-active{background:#f0fff4;color:#276749;border-color:#68d391}
+.b-blacklisted{background:#1a202c;color:#e2e8f0;border-color:#4a5568}
+.b-temp{background:#ebf8ff;color:#2b6cb0;border-color:#63b3ed}
+.badge svg{width:9px;height:9px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+
+.t-yes{color:#276749;font-weight:600}
+.t-no{color:#c53030;font-weight:500}
+
+.actions{display:flex;align-items:center;gap:5px;justify-content:flex-end}
+.act-btn{width:27px;height:27px;border-radius:5px;border:1px solid #e2e8f0;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#a0aec0;transition:all .1s}
+.act-btn:hover{background:#f7fafc;border-color:#b0bec5;color:#4a5568}
+.act-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-top:1px solid #e8ecf0}
+.rpp{display:flex;align-items:center;gap:6px;font-size:12px;color:#718096}
+.rpp select{padding:3px 6px;border:1px solid #e2e8f0;border-radius:4px;font-size:12px;background:#fff;color:#4a5568;outline:none;font-family:inherit}
+.pinfo{font-size:12px;color:#718096}
+.pbtns{display:flex;align-items:center;gap:3px}
+.pbtn{width:27px;height:27px;border-radius:4px;border:1px solid #e2e8f0;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:#718096;font-weight:500;font-family:inherit;transition:all .1s}
+.pbtn:hover:not(.active){background:#f7fafc}
+.pbtn.active{background:#38a169;color:#fff;border-color:#38a169;font-weight:700}
+.pbtn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* ══════════════════════════════
+   CREATE VEHICLE FORM
+══════════════════════════════ */
+.form-header{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.form-back{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:#4a5568;cursor:pointer;font-weight:500}
+.form-back:hover{color:#276749}
+.form-back svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.form-title{font-size:14px;font-weight:700;color:#1a202c}
+
+.form-card{background:#fff;border-radius:8px;border:1px solid #e2e8f0;overflow:hidden}
+
+.form-tabs{display:flex;border-bottom:1px solid #e8ecf0;padding:0 20px}
+.form-tab{padding:11px 4px;margin-right:20px;font-size:12.5px;cursor:pointer;color:#718096;border-bottom:2px solid transparent;font-weight:500;transition:all .1s;white-space:nowrap}
+.form-tab.active{color:#276749;border-bottom-color:#38a169;font-weight:700}
+
+.form-body{padding:20px;overflow-y:auto;max-height:calc(100vh - 200px)}
+
+.section-title{font-size:13px;font-weight:700;color:#1a202c;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #f0f2f5}
+
+.form-grid{display:grid;gap:14px;margin-bottom:20px}
+.form-grid-3{grid-template-columns:1fr 1fr 1fr}
+.form-grid-2{grid-template-columns:1fr 1fr}
+.form-grid-1{grid-template-columns:1fr}
+
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;font-weight:600;color:#718096;text-transform:none;letter-spacing:0}
+.field label .req{color:#e53e3e}
+
+.field input[type=text],
+.field input[type=date]{width:100%;padding:7px 10px;font-size:12px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#2d3748;outline:none;font-family:inherit;transition:border .1s}
+.field input[type=text]:focus,
+.field input[type=date]:focus{border-color:#68d391;box-shadow:0 0 0 2px rgba(104,211,145,.12)}
+.field input[type=text]::placeholder{color:#c4c9d4}
+
+/* Custom select wrapper */
+.sel-wrap{position:relative}
+.sel-wrap select{width:100%;padding:7px 30px 7px 10px;font-size:12px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#2d3748;outline:none;font-family:inherit;appearance:none;-webkit-appearance:none;cursor:pointer;transition:border .1s}
+.sel-wrap select:focus{border-color:#68d391;box-shadow:0 0 0 2px rgba(104,211,145,.12)}
+.sel-wrap select.placeholder{color:#c4c9d4}
+.sel-arrow{position:absolute;right:9px;top:50%;transform:translateY(-50%);pointer-events:none;width:12px;height:12px;stroke:#a0aec0;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* Date input with icon */
+.date-wrap{position:relative}
+.date-wrap input{padding-right:32px}
+.date-icon{position:absolute;right:9px;top:50%;transform:translateY(-50%);pointer-events:none;width:13px;height:13px;stroke:#a0aec0;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* Status tag */
+.status-tag{display:inline-flex;align-items:center;gap:6px;background:#fff8e1;border:1px solid #f6c90e;border-radius:20px;padding:4px 10px;font-size:11px;color:#744210;font-weight:600;margin-top:4px}
+.status-tag .xtag{width:14px;height:14px;border-radius:50%;background:#e53e3e;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.status-tag .xtag svg{width:8px;height:8px;stroke:#fff;fill:none;stroke-width:3;stroke-linecap:round}
+
+/* Address textarea */
+.field textarea{width:100%;padding:7px 10px;font-size:12px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#2d3748;outline:none;font-family:inherit;resize:vertical;min-height:60px;transition:border .1s}
+.field textarea:focus{border-color:#68d391;box-shadow:0 0 0 2px rgba(104,211,145,.12)}
+
+.addr-wrap{position:relative}
+.addr-icon{position:absolute;right:9px;top:9px;pointer-events:none;width:13px;height:13px;stroke:#a0aec0;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* form footer */
+.form-footer{display:flex;align-items:center;gap:10px;padding:14px 20px;border-top:1px solid #e8ecf0;background:#fff}
+.btn-save{background:#38a169;color:#fff;border:none;padding:8px 28px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .1s}
+.btn-save:hover{background:#2f855a}
+.btn-cancel{background:#fff;color:#4a5568;border:1px solid #d1d9e0;padding:8px 20px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .1s}
+.btn-cancel:hover{background:#f7fafc}
+
+.section-divider{border:none;border-top:1px solid #f0f2f5;margin:6px 0 20px}
+
+/* ── Compliance Documents Table ── */
+.comp-table{width:100%;border-collapse:collapse;font-size:12px}
+.comp-table thead tr{background:#f7fafc}
+.comp-table th{padding:9px 14px;text-align:left;font-size:11px;font-weight:600;color:#718096;border-bottom:1px solid #e8ecf0;white-space:nowrap;text-transform:uppercase;letter-spacing:.04em}
+.comp-table td{padding:10px 14px;border-bottom:1px solid #f0f2f5;color:#2d3748;vertical-align:middle}
+.comp-table tr:last-child td{border-bottom:none}
+.comp-table tr:hover td{background:#fafbfc}
+
+.doc-name{font-size:12.5px;color:#1a202c;font-weight:500}
+.expiry-input{padding:6px 9px;font-size:12px;border:1px solid #e2e8f0;border-radius:5px;color:#2d3748;font-family:inherit;outline:none;width:140px;background:#fff;transition:border .1s}
+.expiry-input:focus{border-color:#68d391;box-shadow:0 0 0 2px rgba(104,211,145,.12)}
+.expiry-input::placeholder{color:#c4c9d4}
+
+.file-upload-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;font-size:11px;border:1px dashed #cbd5e0;border-radius:5px;color:#718096;cursor:pointer;background:#fafbfc;transition:all .1s}
+.file-upload-btn:hover{border-color:#68d391;color:#276749;background:#f0fff4}
+.file-upload-btn svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.file-name-text{font-size:11px;color:#4a5568}
+
+.doc-status-badge{display:inline-flex;align-items:center;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:600;border:1.5px solid;cursor:pointer}
+.ds-pending{background:#ebf8ff;color:#2b6cb0;border-color:#63b3ed}
+.ds-uploaded{background:#f0fff4;color:#276749;border-color:#68d391}
+.ds-expired{background:#fff5f5;color:#c53030;border-color:#fc8181}
+
+.doc-actions{display:flex;align-items:center;gap:6px}
+.doc-act{width:26px;height:26px;border-radius:5px;border:1px solid #e2e8f0;background:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#a0aec0;transition:all .1s;flex-shrink:0}
+.doc-act:hover{background:#f7fafc;border-color:#b0bec5;color:#4a5568}
+.doc-act svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.doc-act.danger:hover{background:#fff5f5;border-color:#fc8181;color:#c53030}
+
+.add-doc-btn{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#38a169;background:none;border:none;cursor:pointer;font-family:inherit;padding:0;transition:color .1s}
+.add-doc-btn:hover{color:#276749}
+</style>
+</head>
+<body>
+
+<!-- ── Topbar ── -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="tb-icon">
+      <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </div>
+    <span class="topbar-title" id="topbar-label">Driver Masters Setting landing page</span>
+  </div>
+  <div class="topbar-right">
+    <div class="site-sel">ABC Sites
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#e2e8f0" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
+    <div class="tb-icon"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+    <div class="tb-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+    <div class="tb-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+    <div class="tb-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+    <div class="tb-icon"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+    <div class="avatar-ring">A</div>
+    <div class="tb-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div>
+  </div>
+</div>
+
+<div class="shell">
+  <!-- ── Sidebar ── -->
+  <div class="sidebar">
+    <div class="sb-head">
+      <div class="sb-title" id="sb-module-title">Vehicle</div>
+      <div class="sb-crumb">Master Setting / <span id="sb-module-crumb">Vehicle</span></div>
+    </div>
+    <div class="nav-item">Nodal Points</div>
+    <div class="nav-item">Teams</div>
+    <div class="nav-item" id="nav-employee" onclick="showModule('employee')">Employee</div>
+    <div class="nav-item">Vendor</div>
+    <div class="nav-item active" id="nav-vehicle" onclick="showModule('vehicle')">Vehicle</div>
+    <div class="nav-item" id="nav-driver" onclick="showModule('driver')">Driver</div>
+    <div class="nav-item">Escort</div>
+    <div class="nav-item">Master Route</div>
+    <div class="nav-item">Helpdesk</div>
+    <div class="nav-item">Roles and Permissions</div>
+  </div>
+
+  <!-- ── Main ── -->
+  <div class="main">
+
+  <!-- ════════ MODULE: VEHICLE ════════ -->
+  <div id="module-vehicle">
+
+    <!-- ══ PAGE: LISTING ══ -->
+    <div id="page-listing">
+      <div class="toolbar">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="Search"/>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn">
+          <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+          Filters <svg viewBox="0 0 24 24" style="width:10px;height:10px"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <button class="btn">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+        <button class="btn" onclick="openUploadDrawer()">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload Vehicle
+        </button>
+        <button class="btn btn-primary" onclick="showForm()">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Create New Vehicle
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="tabs">
+          <div class="tab active" id="tab-vehicles-btn" onclick="switchListingTab('vehicles')">Vehicles <span class="tab-n" id="tab-vehicles-count">24</span></div>
+          <div class="tab" id="tab-approval-btn" onclick="switchListingTab('approval')">Under Approval <span class="tab-n" id="tab-approval-count">24</span></div>
+        </div>
+
+        <!-- ── VEHICLES TAB CONTENT ── -->
+        <div id="listing-vehicles">
+          <div class="stat-bar">
+            <div class="total-label"><b>50</b> Total Vehicle</div>
+            <div class="chip c-inactive"><span class="chip-dot"></span>1 Inactive</div>
+            <div class="chip c-expiring"><span class="chip-dot"></span>3 Expiring Soon</div>
+            <div class="chip c-active"><span class="chip-dot"></span>15 Active</div>
+            <div class="chip c-temp"><span class="chip-dot"></span>10 Temporary</div>
+            <div class="chip c-compliant"><span class="chip-dot"></span>10 Compliant</div>
+            <div class="chip c-noncompliant"><span class="chip-dot"></span>5 Non-Compliant</div>
+            <div class="chip c-blacklisted"><span class="chip-dot"></span>10 Blacklisted</div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Vehicle Number</th>
+                  <th>Vehicle Code</th>
+                  <th>Vehicle Type</th>
+                  <th>Vehicle Capacity</th>
+                  <th>Status</th>
+                  <th>Vendor</th>
+                  <th>App Tracking</th>
+                  <th>Compliance</th>
+                  <th style="text-align:right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr data-vid="1">
+                  <td><div class="vn">TN13E8232</div><div class="vr"><span class="star">★</span> 4.5</div></td>
+                  <td>8232 (SBLT)</td><td>Duster</td><td>05 Seater</td>
+                  <td><span class="badge b-inactive" onclick="openStatusModal(1)">Inactive <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></td>
+                  <td>Ravi Kumar</td><td class="t-yes">Yes</td><td class="t-yes">Compliant</td>
+                  <td><div class="actions"><div class="act-btn" onclick="showEditForm(1)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+                <tr data-vid="2">
+                  <td><div class="vn">TN13E8232</div><div class="vr"><span class="star">★</span> 3.5</div></td>
+                  <td>8232 (SBLT)</td><td>Duster</td><td>05 Seater</td>
+                  <td><span class="badge b-active" onclick="openStatusModal(2)">Active <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg></span></td>
+                  <td>Sona Travel</td><td class="t-yes">Yes</td><td class="t-yes">Compliant</td>
+                  <td><div class="actions"><div class="act-btn" onclick="showEditForm(2)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+                <tr data-vid="3">
+                  <td><div class="vn">TN13E8232</div><div class="vr"><span class="star">★</span> 5.0</div></td>
+                  <td>8232 (Adhoc)</td><td>Duster</td><td>05 Seater</td>
+                  <td><span class="badge b-blacklisted" onclick="openStatusModal(3)">Blacklisted <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></td>
+                  <td>Ravi Sharma</td><td class="t-no">No</td><td class="t-no">Non-Compliant</td>
+                  <td><div class="actions"><div class="act-btn" onclick="showEditForm(3)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+                <tr data-vid="4">
+                  <td><div class="vn">TN13E8232</div><div class="vr"><span class="star">★</span> 5.0</div></td>
+                  <td>8232 (Adhoc)</td><td>Duster</td><td>05 Seater</td>
+                  <td><span class="badge b-temp" onclick="openStatusModal(4)">Temporarily <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></td>
+                  <td>Ravi Sharma</td><td class="t-no">No</td><td class="t-no">Non-Compliant</td>
+                  <td><div class="actions"><div class="act-btn" onclick="showEditForm(4)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+                <tr data-vid="5">
+                  <td><div class="vn">KA05AB9010</div><div class="vr"><span class="star">★</span> 4.2</div></td>
+                  <td>9010 (SBLT)</td><td>Innova</td><td>07 Seater</td>
+                  <td><span class="badge b-active" onclick="openStatusModal(5)">Active <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg></span></td>
+                  <td>City Cabs</td><td class="t-yes">Yes</td><td class="t-yes">Compliant</td>
+                  <td><div class="actions"><div class="act-btn" onclick="showEditForm(5)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+                <tr data-vid="6">
+                  <td><div class="vn">KA05CD4521</div><div class="vr"><span class="star">★</span> 3.8</div></td>
+                  <td>4521 (Adhoc)</td><td>Swift Dzire</td><td>04 Seater</td>
+                  <td><span class="badge b-inactive" onclick="openStatusModal(6)">Inactive <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></td>
+                  <td>Sona Travel</td><td class="t-no">No</td><td class="t-no">Non-Compliant</td>
+                  <td><div class="actions"><div class="act-btn" onclick="showEditForm(6)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+                <tr data-vid="7">
+                  <td><div class="vn">MH12XY7731</div><div class="vr"><span class="star">★</span> 4.7</div></td>
+                  <td>7731 (SBLT)</td><td>Ertiga</td><td>06 Seater</td>
+                  <td><span class="badge b-active" onclick="openStatusModal(7)">Active <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg></span></td>
+                  <td>Ravi Kumar</td><td class="t-yes">Yes</td><td class="t-yes">Compliant</td>
+                  <td><div class="actions"><div class="act-btn" onclick="showEditForm(7)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <div class="rpp">Show <select><option>10</option><option>25</option><option>50</option></select> rows per page</div>
+            <div class="pinfo">1–14 of 50 results</div>
+            <div class="pbtns">
+              <button class="pbtn"><svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></button>
+              <button class="pbtn"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+              <button class="pbtn active">1</button>
+              <button class="pbtn">2</button>
+              <button class="pbtn">3</button>
+              <button class="pbtn"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+              <button class="pbtn"><svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg></button>
+            </div>
+          </div>
+        </div><!-- /listing-vehicles -->
+
+        <!-- ── UNDER APPROVAL TAB CONTENT ── -->
+        <div id="listing-approval" style="display:none">
+          <div class="stat-bar">
+            <div class="total-label"><b>50</b> Total Vehicle</div>
+            <div class="chip c-approval"><span class="chip-dot"></span>3 Sent for Approval</div>
+            <div class="chip c-rejected"><span class="chip-dot"></span>5 Rejected</div>
+            <div class="chip c-pending-approval"><span class="chip-dot"></span>10 Pending Approval</div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:180px">Compliant Status</th>
+                  <th>Vehicle Number</th>
+                  <th>Vehicle Code</th>
+                  <th>Vehicle Type</th>
+                  <th>Vehicle Capacity</th>
+                  <th>Vendor</th>
+                  <th>App Tracking</th>
+                  <th style="text-align:right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="approval-badge ap-pending">Pending Approval</span></td>
+                  <td><div class="vn">TN13E8232</div><div class="vr"><span class="star">★</span> 4.5</div></td>
+                  <td>8232 (SBLT)</td><td>Duster</td><td>05 Seater</td>
+                  <td>Ravi Kumar</td><td class="t-yes">Yes</td>
+                  <td><div class="actions"><div class="act-btn" onclick="showEditForm(1)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+                <tr>
+                  <td><span class="approval-badge ap-sent">Sent for Approval</span></td>
+                  <td><div class="vn">TN13E8232</div><div class="vr"><span class="star">★</span> 3.5</div></td>
+                  <td>8232 (SBLT)</td><td>Duster</td><td>05 Seater</td>
+                  <td>Sona Travel</td><td class="t-yes">Yes</td>
+                  <td><div class="actions"><div class="act-btn" onclick="showEditForm(2)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+                <tr>
+                  <td><span class="approval-badge ap-rejected">Rejected</span></td>
+                  <td><div class="vn">TN13E8232</div><div class="vr"><span class="star">★</span> 5</div></td>
+                  <td>8232 (Adhoc)</td><td>Duster</td><td>05 Seater</td>
+                  <td>Ravi Sharma</td><td class="t-no">No</td>
+                  <td><div class="actions"><div class="act-btn" onclick="showEditForm(3)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+                <tr>
+                  <td><span class="approval-badge ap-pending">Pending Approval</span></td>
+                  <td><div class="vn">TN13E8232</div><div class="vr"><span class="star">★</span> 5</div></td>
+                  <td>8232 (Adhoc)</td><td>Duster</td><td>05 Seater</td>
+                  <td>Ravi Sharma</td><td class="t-no">No</td>
+                  <td><div class="actions"><div class="act-btn" onclick="showEditForm(4)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+                <tr>
+                  <td><span class="approval-badge ap-sent">Sent for Approval</span></td>
+                  <td><div class="vn">KA05AB9010</div><div class="vr"><span class="star">★</span> 4.2</div></td>
+                  <td>9010 (SBLT)</td><td>Innova</td><td>07 Seater</td>
+                  <td>City Cabs</td><td class="t-yes">Yes</td>
+                  <td><div class="actions"><div class="act-btn" onclick="showEditForm(5)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+                <tr>
+                  <td><span class="approval-badge ap-rejected">Rejected</span></td>
+                  <td><div class="vn">KA05CD4521</div><div class="vr"><span class="star">★</span> 3.8</div></td>
+                  <td>4521 (Adhoc)</td><td>Swift Dzire</td><td>04 Seater</td>
+                  <td>Sona Travel</td><td class="t-no">No</td>
+                  <td><div class="actions"><div class="act-btn" onclick="showEditForm(6)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+                <tr>
+                  <td><span class="approval-badge ap-pending">Pending Approval</span></td>
+                  <td><div class="vn">MH12XY7731</div><div class="vr"><span class="star">★</span> 4.7</div></td>
+                  <td>7731 (SBLT)</td><td>Ertiga</td><td>06 Seater</td>
+                  <td>Ravi Kumar</td><td class="t-yes">Yes</td>
+                  <td><div class="actions"><div class="act-btn" onclick="showEditForm(7)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <div class="rpp">Show <select><option>10</option><option>25</option><option>50</option></select> rows per page</div>
+            <div class="pinfo">1–14 of 50 results</div>
+            <div class="pbtns">
+              <button class="pbtn"><svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></button>
+              <button class="pbtn"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+              <button class="pbtn active">1</button>
+              <button class="pbtn">2</button>
+              <button class="pbtn">3</button>
+              <button class="pbtn"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+              <button class="pbtn"><svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg></button>
+            </div>
+          </div>
+        </div><!-- /listing-approval -->
+      </div>
+    </div>
+
+    <!-- ══ PAGE: CREATE VEHICLE FORM ══ -->
+    <div id="page-form">
+      <div class="form-header">
+        <div class="form-back" onclick="showListing()">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          <span id="form-back-label">Create new vehicle</span>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <!-- Form Tabs -->
+        <div class="form-tabs">
+          <div class="form-tab active" onclick="switchFormTab(this,'tab-details')">Vehicle Details</div>
+          <div class="form-tab" onclick="switchFormTab(this,'tab-compliance')">Compliance Documents</div>
+        </div>
+
+        <!-- Tab: Vehicle Details -->
+        <div id="tab-details" class="form-body">
+
+          <!-- Basic Details -->
+          <div class="section-title">Basic Details</div>
+          <div class="form-grid form-grid-3">
+            <div class="field">
+              <label>Vehicle Number <span class="req">*</span></label>
+              <input type="text" id="f-vnum" placeholder="Enter"/>
+            </div>
+            <div class="field">
+              <label>Vehicle Code <span class="req">*</span></label>
+              <input type="text" id="f-vcode" placeholder="Enter"/>
+            </div>
+            <div class="field">
+              <label>Vehicle Type <span class="req">*</span></label>
+              <div class="sel-wrap">
+                <select id="f-vtype" class="placeholder" onchange="this.classList.remove('placeholder')">
+                  <option value="" disabled selected>Select</option>
+                  <option>SBLT</option>
+                  <option>Adhoc</option>
+                  <option>Pool</option>
+                  <option>Dedicated</option>
+                </select>
+                <svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="form-grid form-grid-3">
+            <div class="field">
+              <label>Vehicle Model <span class="req">*</span></label>
+              <input type="text" id="f-vmodel" placeholder="Enter"/>
+            </div>
+            <div class="field">
+              <label>Vehicle Capacity <span class="req">*</span></label>
+              <div class="sel-wrap">
+                <select id="f-vcap" class="placeholder" onchange="this.classList.remove('placeholder')">
+                  <option value="" disabled selected>Select</option>
+                  <option>04 Seater</option>
+                  <option>05 Seater</option>
+                  <option>06 Seater</option>
+                  <option>07 Seater</option>
+                  <option>12 Seater</option>
+                  <option>18 Seater</option>
+                </select>
+                <svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+            <div class="field">
+              <label>Vendor <span class="req">*</span></label>
+              <div class="sel-wrap">
+                <select id="f-vendor" class="placeholder" onchange="this.classList.remove('placeholder')">
+                  <option value="" disabled selected>Select</option>
+                  <option>Ravi Kumar</option>
+                  <option>Sona Travel</option>
+                  <option>Ravi Sharma</option>
+                  <option>City Cabs</option>
+                  <option>Greenline Travels</option>
+                </select>
+                <svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <hr class="section-divider"/>
+
+          <!-- Vehicle Specifications -->
+          <div class="section-title">Vehicle Specifications</div>
+          <div class="form-grid form-grid-3">
+            <div class="field">
+              <label>Chassis Number</label>
+              <input type="text" placeholder="Enter"/>
+            </div>
+            <div class="field">
+              <label>Vehicle Make</label>
+              <div class="sel-wrap">
+                <select class="placeholder" onchange="this.classList.remove('placeholder')">
+                  <option value="" disabled selected>Select</option>
+                  <option>Maruti Suzuki</option>
+                  <option>Hyundai</option>
+                  <option>Toyota</option>
+                  <option>Tata</option>
+                  <option>Mahindra</option>
+                  <option>Honda</option>
+                </select>
+                <svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+            <div class="field">
+              <label>Vehicle Group</label>
+              <input type="text" placeholder="Enter"/>
+            </div>
+          </div>
+          <div class="form-grid form-grid-3">
+            <div class="field">
+              <label>Immobilizer</label>
+              <div class="sel-wrap">
+                <select class="placeholder" onchange="this.classList.remove('placeholder')">
+                  <option value="" disabled selected>Select</option>
+                  <option>Yes</option>
+                  <option>No</option>
+                </select>
+                <svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+            <div class="field">
+              <label>Fuel Type</label>
+              <div class="sel-wrap">
+                <select class="placeholder" onchange="this.classList.remove('placeholder')">
+                  <option value="" disabled selected>Select</option>
+                  <option>Petrol</option>
+                  <option>Diesel</option>
+                  <option>CNG</option>
+                  <option>Electric</option>
+                  <option>Hybrid</option>
+                </select>
+                <svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+            <div class="field">
+              <label>Air Conditioner</label>
+              <div class="sel-wrap">
+                <select class="placeholder" onchange="this.classList.remove('placeholder')">
+                  <option value="" disabled selected>Select</option>
+                  <option>Yes</option>
+                  <option>No</option>
+                </select>
+                <svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <hr class="section-divider"/>
+
+          <!-- Vehicle Tracking -->
+          <div class="section-title">Vehicle Tracking</div>
+          <div class="form-grid form-grid-3" id="tracking-row1">
+            <div class="field">
+              <label>Tracking Mode</label>
+              <div class="sel-wrap">
+                <select id="f-tracking" onchange="handleTrackingMode(this)">
+                  <option value="app">App Only</option>
+                  <option value="gps">GPS</option>
+                  <option value="both">Both</option>
+                  <option value="none">None</option>
+                </select>
+                <svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+            <!-- IMEI — shown when GPS or Both -->
+            <div class="field" id="field-imei" style="display:none">
+              <label>IMEI Number</label>
+              <input type="text" placeholder="Enter" id="imei-input"/>
+            </div>
+            <!-- GPS SIM — shown when GPS or Both -->
+            <div class="field" id="field-gps-sim" style="display:none">
+              <label>GPS SIM Number</label>
+              <input type="text" placeholder="Enter" id="gps-sim-input"/>
+            </div>
+          </div>
+          <!-- Primary Tracking Mode — only when Both is selected -->
+          <div class="form-grid form-grid-3" id="field-primary-tracking" style="display:none">
+            <div class="field">
+              <label>Primary Tracking Mode</label>
+              <div class="sel-wrap">
+                <select>
+                  <option>App</option>
+                  <option>GPS Device</option>
+                </select>
+                <svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <hr class="section-divider"/>
+
+          <!-- Lifecycle & Operations -->
+          <div class="section-title">Lifecycle &amp; Operations</div>
+          <div class="form-grid form-grid-3">
+            <div class="field">
+              <label>Induction Type</label>
+              <div class="sel-wrap">
+                <select class="placeholder" onchange="this.classList.remove('placeholder')">
+                  <option value="" disabled selected>Select</option>
+                  <option>New</option>
+                  <option>Transfer</option>
+                  <option>Replacement</option>
+                </select>
+                <svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+            <div class="field">
+              <label>Induction Date</label>
+              <div class="date-wrap">
+                <input type="text" placeholder="22-10-2024" id="induction-date" value="22-10-2024"/>
+                <svg class="date-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+            </div>
+            <div class="field">
+              <label>Date of Joining</label>
+              <div class="date-wrap">
+                <input type="text" placeholder="22-10-2024" value="22-10-2024"/>
+                <svg class="date-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="form-grid form-grid-1" style="max-width:340px">
+            <div class="field">
+              <label>Status <span class="req">*</span></label>
+              <div class="sel-wrap">
+                <select id="f-status" onchange="handleFormStatusChange(this)">
+                  <option value="">Select</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="temporarily" selected>Temporarily</option>
+                  <option value="blacklisted">Blacklisted</option>
+                </select>
+                <svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+              <div class="status-tag" id="status-tag">
+                New Status "Temporarily" | Effective From 22-10-2025 &nbsp;To&nbsp; Valid Till 22-12-2025
+                <span class="xtag" onclick="this.parentElement.style.display='none'">
+                  <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <hr class="section-divider"/>
+
+          <!-- Driver & Billing -->
+          <div class="section-title">Driver &amp; Billing Information</div>
+          <div class="form-grid form-grid-3">
+            <div class="field">
+              <label>Driver 1 <span class="req">*</span></label>
+              <div class="sel-wrap">
+                <select id="f-driver1" class="placeholder" onchange="this.classList.remove('placeholder')">
+                  <option value="" disabled selected>Select</option>
+                  <option>Ramesh Kumar</option>
+                  <option>Suresh Nair</option>
+                  <option>Anil Verma</option>
+                  <option>Deepak Singh</option>
+                </select>
+                <svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+            <div class="field">
+              <label>Driver 2</label>
+              <div class="sel-wrap">
+                <select id="f-driver2" class="placeholder" onchange="this.classList.remove('placeholder')">
+                  <option value="" disabled selected>Select</option>
+                  <option>Ramesh Kumar</option>
+                  <option>Suresh Nair</option>
+                  <option>Anil Verma</option>
+                  <option>Deepak Singh</option>
+                </select>
+                <svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+            <div class="field">
+              <label>Driver 3</label>
+              <div class="sel-wrap">
+                <select id="f-driver3" class="placeholder" onchange="this.classList.remove('placeholder')">
+                  <option value="" disabled selected>Select</option>
+                  <option>Ramesh Kumar</option>
+                  <option>Suresh Nair</option>
+                  <option>Anil Verma</option>
+                  <option>Deepak Singh</option>
+                </select>
+                <svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+            </div>
+          </div>
+          <div class="form-grid form-grid-2">
+            <div class="field">
+              <label>Billing Profile</label>
+              <input type="text" id="f-billing-profile" value="bill-1"/>
+            </div>
+            <div class="field">
+              <label>Billing Effective Date</label>
+              <div class="date-wrap">
+                <input type="text" id="f-billing-date" value="22-10-2024"/>
+                <svg class="date-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <hr class="section-divider"/>
+
+          <!-- Shed Location -->
+          <div class="section-title">Shed Location</div>
+          <div class="form-grid form-grid-3">
+            <div class="field">
+              <label>Address</label>
+              <div class="addr-wrap">
+                <textarea id="f-address" placeholder="Enter address">380, Nitikhamnd 3rd, Indirapuram , g..</textarea>
+                <svg class="addr-icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              </div>
+            </div>
+            <div class="field">
+              <label>Latitude and Longitude</label>
+              <input type="text" id="f-lat" value="12.93413324, 77.69501865"/>
+            </div>
+            <div class="field">
+              <label>Locality</label>
+              <input type="text" id="f-locality" value="Nitikhand 3, Indirapuram"/>
+            </div>
+          </div>
+
+        </div><!-- /tab-details -->
+
+        <!-- Tab: Compliance Documents -->
+        <div id="tab-compliance" class="form-body" style="display:none;padding:0">
+
+          <!-- Info banner -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 18px;background:#f0fff4;border-bottom:1px solid #c6f6d5">
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#276749">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38a169" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              All Compliance document are optional.
+            </div>
+          </div>
+
+          <!-- Document table -->
+          <div style="overflow-x:auto">
+            <table class="comp-table">
+              <thead>
+                <tr>
+                  <th style="width:220px">Document Name</th>
+                  <th style="width:180px">Expiry Date</th>
+                  <th style="flex:1">File Name</th>
+                  <th style="width:150px">Document Status</th>
+                  <th style="width:140px">Actions</th>
+                  <th style="width:36px"></th>
+                </tr>
+              </thead>
+              <tbody id="comp-tbody">
+                <!-- rows injected by JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Add more -->
+          <div style="padding:14px 18px">
+            <button class="add-doc-btn" onclick="addDocRow()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#38a169" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add More Document
+            </button>
+          </div>
+        </div>
+
+        <!-- Form Footer -->
+        <div class="form-footer">
+          <button class="btn-save" onclick="saveVehicle()">Save</button>
+          <button class="btn-cancel" onclick="showListing()">Cancel</button>
+        </div>
+      </div>
+    </div><!-- /page-form -->
+
+  </div><!-- /module-vehicle -->
+
+  <!-- ════════ MODULE: DRIVER ════════ -->
+  <div id="module-driver" style="display:none">
+
+    <!-- ══ DRIVER LISTING ══ -->
+    <div id="driver-listing">
+      <div class="toolbar">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="Search"/>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn">
+          <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+          Filters <svg viewBox="0 0 24 24" style="width:10px;height:10px"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <button class="btn">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+        <button class="btn" onclick="openUploadDrawer()">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload Driver
+        </button>
+        <button class="btn btn-primary" onclick="showDriverForm()">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Create New Driver
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="tabs">
+          <div class="tab active" id="dtab-drivers-btn" onclick="switchDriverTab('drivers')">Drivers <span class="tab-n">18</span></div>
+          <div class="tab" id="dtab-approval-btn" onclick="switchDriverTab('approval')">Under Approval <span class="tab-n">6</span></div>
+        </div>
+
+        <!-- Drivers tab -->
+        <div id="driver-tab-drivers">
+          <div class="stat-bar">
+            <div class="total-label"><b>24</b> Total Drivers</div>
+            <div class="chip c-inactive"><span class="chip-dot"></span>2 Inactive</div>
+            <div class="chip c-expiring"><span class="chip-dot"></span>4 Licence Expiring</div>
+            <div class="chip c-active"><span class="chip-dot"></span>15 Active</div>
+            <div class="chip c-temp"><span class="chip-dot"></span>3 Temporary</div>
+            <div class="chip c-compliant"><span class="chip-dot"></span>18 Compliant</div>
+            <div class="chip c-noncompliant"><span class="chip-dot"></span>6 Non-Compliant</div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:210px">Driver Name</th>
+                  <th>Mobile Number</th>
+                  <th>License Number</th>
+                  <th>License Expiry</th>
+                  <th style="width:140px">Driver Status</th>
+                  <th>Vendor</th>
+                  <th>Compliant Status</th>
+                  <th style="text-align:right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr data-did="1">
+                  <td><div class="driver-cell"><div class="driver-avatar" style="background:#d69e2e">SS</div><div><div class="vn">Sakshi Shania</div><div class="vr"><span class="star">★</span> 4.0</div></div></div></td>
+                  <td>+91- 8178939937</td>
+                  <td>TN1320140004846</td>
+                  <td><div class="vn" style="font-weight:500">12-12-2025</div><div class="expiry-sub exp-expired"><span class="exp-dot"></span>Expired</div></td>
+                  <td><span class="badge b-inactive" onclick="openDriverStatusModal(1)">Inactive <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></td>
+                  <td>Ravi Kumar</td>
+                  <td><span class="comp-pill comp-ok">Compliant</span></td>
+                  <td><div class="actions"><div class="act-btn" onclick="showDriverEditForm(1)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+                <tr data-did="2">
+                  <td><div class="driver-cell"><div class="driver-avatar" style="background:#38a169">SS</div><div><div class="vn">Sakshi Shania</div><div class="vr"><span class="star">★</span> 4.0</div></div></div></td>
+                  <td>+91- 8178939937</td>
+                  <td>TN1320140004846</td>
+                  <td><div class="vn" style="font-weight:500">12-12-2025</div><div class="expiry-sub exp-active"><span class="exp-dot"></span>Active</div></td>
+                  <td><span class="badge b-active" onclick="openDriverStatusModal(2)">Active <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg></span></td>
+                  <td>Sona Travel</td>
+                  <td><span class="comp-pill comp-ok">Compliant</span></td>
+                  <td><div class="actions"><div class="act-btn" onclick="showDriverEditForm(2)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+                <tr data-did="3">
+                  <td><div class="driver-cell"><div class="driver-avatar" style="background:#3182ce">SS</div><div><div class="vn">Sakshi Shania</div><div class="vr"><span class="star">★</span> 4.0</div></div></div></td>
+                  <td>+91- 8178939937</td>
+                  <td>TN1320140004846</td>
+                  <td><div class="vn" style="font-weight:500">12-12-2025</div><div class="expiry-sub exp-soon"><span class="exp-dot"></span>Expiring in 02 Month</div></td>
+                  <td><span class="badge b-blacklisted" onclick="openDriverStatusModal(3)">Blacklisted <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></td>
+                  <td>Ravi Sharma</td>
+                  <td><span class="comp-pill comp-no">Non-Compliant</span></td>
+                  <td><div class="actions"><div class="act-btn" onclick="showDriverEditForm(3)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+                <tr data-did="4">
+                  <td><div class="driver-cell"><div class="driver-avatar" style="background:#3182ce">SS</div><div><div class="vn">Sakshi Shania</div><div class="vr"><span class="star">★</span> 4.0</div></div></div></td>
+                  <td>+91- 8178939937</td>
+                  <td>TN1320140004846</td>
+                  <td><div class="vn" style="font-weight:500">12-12-2025</div><div class="expiry-sub exp-soon"><span class="exp-dot"></span>Expiring in 02 Month</div></td>
+                  <td><span class="badge b-temp" onclick="openDriverStatusModal(4)">Temporary <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></td>
+                  <td>Ravi Sharma</td>
+                  <td><span class="comp-pill comp-no">Non-Compliant</span></td>
+                  <td><div class="actions"><div class="act-btn" onclick="showDriverEditForm(4)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+                <tr data-did="5">
+                  <td><div class="driver-cell"><div class="driver-avatar" style="background:#805ad5">RK</div><div><div class="vn">Ramesh Kumar</div><div class="vr"><span class="star">★</span> 4.6</div></div></div></td>
+                  <td>+91- 9845012233</td>
+                  <td>KA0520180012394</td>
+                  <td><div class="vn" style="font-weight:500">08-04-2027</div><div class="expiry-sub exp-active"><span class="exp-dot"></span>Active</div></td>
+                  <td><span class="badge b-active" onclick="openDriverStatusModal(5)">Active <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg></span></td>
+                  <td>City Cabs</td>
+                  <td><span class="comp-pill comp-ok">Compliant</span></td>
+                  <td><div class="actions"><div class="act-btn" onclick="showDriverEditForm(5)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <div class="rpp">Show <select><option>10</option><option>25</option><option>50</option></select> rows per page</div>
+            <div class="pinfo">1–14 of 24 results</div>
+            <div class="pbtns">
+              <button class="pbtn"><svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></button>
+              <button class="pbtn"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+              <button class="pbtn active">1</button>
+              <button class="pbtn">2</button>
+              <button class="pbtn">3</button>
+              <button class="pbtn"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+              <button class="pbtn"><svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Driver Under Approval tab -->
+        <div id="driver-tab-approval" style="display:none">
+          <div class="stat-bar">
+            <div class="total-label"><b>24</b> Total Drivers</div>
+            <div class="chip c-approval"><span class="chip-dot"></span>2 Sent for Approval</div>
+            <div class="chip c-rejected"><span class="chip-dot"></span>1 Rejected</div>
+            <div class="chip c-pending-approval"><span class="chip-dot"></span>3 Pending Approval</div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:180px">Compliant Status</th>
+                  <th style="width:200px">Driver Name</th>
+                  <th>Mobile Number</th>
+                  <th>License Number</th>
+                  <th>Vendor</th>
+                  <th style="text-align:right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="approval-badge ap-pending">Pending Approval</span></td>
+                  <td><div class="driver-cell"><div class="driver-avatar" style="background:#d69e2e">SS</div><div class="vn">Sakshi Shania</div></div></td>
+                  <td>+91- 8178939937</td><td>TN1320140004846</td><td>Ravi Kumar</td>
+                  <td><div class="actions"><div class="act-btn" onclick="showDriverEditForm(1)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+                <tr>
+                  <td><span class="approval-badge ap-sent">Sent for Approval</span></td>
+                  <td><div class="driver-cell"><div class="driver-avatar" style="background:#38a169">SS</div><div class="vn">Sakshi Shania</div></div></td>
+                  <td>+91- 8178939937</td><td>TN1320140004846</td><td>Sona Travel</td>
+                  <td><div class="actions"><div class="act-btn" onclick="showDriverEditForm(2)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+                <tr>
+                  <td><span class="approval-badge ap-rejected">Rejected</span></td>
+                  <td><div class="driver-cell"><div class="driver-avatar" style="background:#3182ce">SS</div><div class="vn">Sakshi Shania</div></div></td>
+                  <td>+91- 8178939937</td><td>TN1320140004846</td><td>Ravi Sharma</td>
+                  <td><div class="actions"><div class="act-btn" onclick="showDriverEditForm(3)"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div><div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <div class="rpp">Show <select><option>10</option><option>25</option><option>50</option></select> rows per page</div>
+            <div class="pinfo">1–6 of 6 results</div>
+            <div class="pbtns">
+              <button class="pbtn"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+              <button class="pbtn active">1</button>
+              <button class="pbtn"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /driver-listing -->
+
+    <!-- ══ DRIVER FORM ══ -->
+    <div id="driver-form" style="display:none">
+      <div class="form-header">
+        <div class="form-back" onclick="showDriverListing()">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          <span id="driver-form-back-label">Create new driver</span>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="form-tabs">
+          <div class="form-tab active" onclick="switchDriverFormTab(this,'dtab-details')">Driver Details</div>
+          <div class="form-tab" onclick="switchDriverFormTab(this,'dtab-compliance')">Compliance Documents</div>
+        </div>
+
+        <!-- Tab: Driver Details -->
+        <div id="dtab-details" class="form-body">
+
+          <!-- Basic Details -->
+          <div class="section-title">Basic Details</div>
+          <div class="form-grid form-grid-3">
+            <div class="field"><label>First Name <span class="req">*</span></label><input type="text" id="d-fname" placeholder="Enter First Name"/></div>
+            <div class="field"><label>Middle Name</label><input type="text" id="d-mname" placeholder="Enter Middle Name"/></div>
+            <div class="field"><label>Last Name</label><input type="text" id="d-lname" placeholder="Enter Last Name"/></div>
+          </div>
+          <div class="form-grid form-grid-3">
+            <div class="field"><label>Mobile Number <span class="req">*</span></label>
+              <div class="phone-wrap"><span class="phone-prefix">+91</span><input type="text" id="d-mobile" placeholder="Enter 10 Digit Mobile number"/></div>
+            </div>
+            <div class="field"><label>Emergency Contact</label>
+              <div class="phone-wrap"><span class="phone-prefix">+91</span><input type="text" id="d-emergency" placeholder="Enter 10 Digit Mobile number"/></div>
+            </div>
+            <div class="field"><label>Date of Birth</label>
+              <div class="date-wrap"><input type="text" id="d-dob" value="22-10-2025"/><svg class="date-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+            </div>
+          </div>
+          <div class="form-grid form-grid-3">
+            <div class="field"><label>Gender <span class="req">*</span></label>
+              <div class="sel-wrap"><select id="d-gender"><option>Female</option><option>Male</option><option>Other</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+            </div>
+            <div class="field"><label>Marital Status</label>
+              <div class="sel-wrap"><select id="d-marital"><option>Single</option><option>Married</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+            </div>
+            <div class="field"><label>Blood Group</label>
+              <div class="sel-wrap"><select id="d-blood" class="placeholder" onchange="this.classList.remove('placeholder')"><option value="" disabled selected>Select</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+            </div>
+          </div>
+          <div class="form-grid form-grid-3">
+            <div class="field"><label>Languages Known</label>
+              <div class="sel-wrap"><select class="placeholder" onchange="this.classList.remove('placeholder')"><option value="" disabled selected>Select</option><option>Hindi</option><option>English</option><option>Kannada</option><option>Tamil</option><option>Telugu</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+            </div>
+          </div>
+          <div class="form-grid form-grid-1" style="max-width:340px;margin-top:8px">
+            <div class="field"><label>Status <span class="req">*</span></label>
+              <div class="sel-wrap"><select id="d-status" onchange="handleDriverFormStatus(this)"><option value="">Select</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="temporarily" selected>Temporarily</option><option value="blacklisted">Blacklisted</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+              <div class="status-tag" id="d-status-tag" style="background:#f0fff4;border-color:#68d391;color:#276749">
+                Valid Till 22-12-2025
+                <span class="xtag" style="background:#38a169" onclick="this.parentElement.style.display='none'"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+              </div>
+            </div>
+          </div>
+
+          <hr class="section-divider"/>
+
+          <!-- License & Verification -->
+          <div class="section-title">License &amp; Verification</div>
+          <div class="form-grid form-grid-3">
+            <div class="field"><label>Licence Number <span class="req">*</span></label><input type="text" id="d-licence" placeholder="Enter"/></div>
+            <div class="field"><label>License Type <span class="req">*</span></label>
+              <div class="sel-wrap"><select class="placeholder" onchange="this.classList.remove('placeholder')"><option value="" disabled selected>Select</option><option>LMV</option><option>HMV</option><option>Commercial</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+            </div>
+            <div class="field"><label>Background Verification Completed <span class="req">*</span></label>
+              <div class="sel-wrap"><select class="placeholder" onchange="this.classList.remove('placeholder')"><option value="" disabled selected>Select</option><option>Yes</option><option>No</option><option>In Progress</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+            </div>
+          </div>
+          <div class="form-grid form-grid-3">
+            <div class="field"><label>RFID</label><input type="text" placeholder="Enter"/></div>
+          </div>
+
+          <hr class="section-divider"/>
+
+          <!-- Experience & Work Preferences -->
+          <div class="section-title">Experience &amp; Work Preferences</div>
+          <div class="form-grid form-grid-3">
+            <div class="field"><label>Experience</label>
+              <div style="display:flex;gap:10px">
+                <div class="sel-wrap" style="flex:1"><select class="placeholder" onchange="this.classList.remove('placeholder')"><option value="" disabled selected>Year</option><option>0</option><option>1</option><option>2</option><option>3</option><option>5</option><option>10+</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+                <div class="sel-wrap" style="flex:1"><select class="placeholder" onchange="this.classList.remove('placeholder')"><option value="" disabled selected>Month</option><option>0</option><option>3</option><option>6</option><option>9</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+              </div>
+            </div>
+          </div>
+          <div class="form-grid form-grid-3">
+            <div class="field"><label>Rest Days</label>
+              <div class="sel-wrap"><select class="placeholder" onchange="this.classList.remove('placeholder')"><option value="" disabled selected>Select</option><option>Sunday</option><option>Saturday &amp; Sunday</option><option>Rotational</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+            </div>
+          </div>
+
+          <hr class="section-divider"/>
+
+          <!-- Employment Details -->
+          <div class="section-title">Employment Details</div>
+          <div class="form-grid form-grid-3">
+            <div class="field"><label>Vendor <span class="req">*</span></label>
+              <div class="sel-wrap"><select class="placeholder" onchange="this.classList.remove('placeholder')"><option value="" disabled selected>Select</option><option>Ravi Kumar</option><option>Sona Travel</option><option>Ravi Sharma</option><option>City Cabs</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+            </div>
+            <div class="field"><label>Vehicle</label>
+              <div class="sel-wrap"><select class="placeholder" onchange="this.classList.remove('placeholder')"><option value="" disabled selected>Select</option><option>TN13E8232</option><option>KA05AB9010</option><option>MH12XY7731</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+            </div>
+            <div class="field"><label>Transport Type</label>
+              <div class="sel-wrap"><select class="placeholder" onchange="this.classList.remove('placeholder')"><option value="" disabled selected>Select</option><option>Cab</option><option>Bus</option><option>Shuttle</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+            </div>
+          </div>
+          <div class="form-grid form-grid-3">
+            <div class="field"><label>Approver Id</label><input type="text" placeholder="Enter"/></div>
+            <div class="field"><label>Date of Joining</label><div class="date-wrap"><input type="text" value="22-10-2024"/><svg class="date-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div>
+            <div class="field"><label>Induction Date</label><div class="date-wrap"><input type="text" value="22-10-2024"/><svg class="date-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div>
+          </div>
+          <div class="form-grid form-grid-3">
+            <div class="field"><label>Date of Leaving</label><div class="date-wrap"><input type="text" value="22-10-2025"/><svg class="date-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div>
+            <div class="field"><label>Last Modified</label><div class="date-wrap"><input type="text" value="22-10-2025"/><svg class="date-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div>
+            <div class="field"><label>Created On</label><div class="date-wrap"><input type="text" value="22-10-2025"/><svg class="date-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div>
+          </div>
+
+          <hr class="section-divider"/>
+
+          <!-- Home Location -->
+          <div class="section-title">Home Location</div>
+          <div class="form-grid form-grid-3">
+            <div class="field"><label>Address <span class="req">*</span></label>
+              <div class="addr-wrap"><textarea placeholder="Enter address">380, Nitikhamnd 3rd, Indirapuram , g..</textarea><svg class="addr-icon" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+            </div>
+            <div class="field"><label>Latitude and Longitude <span class="req">*</span></label><input type="text" value="12.93413324, 77.69501865"/></div>
+            <div class="field"><label>Locality <span class="req">*</span></label><input type="text" value="Nitikhand 3, Indirapuram"/></div>
+          </div>
+
+          <hr class="section-divider"/>
+
+          <!-- Shift Details -->
+          <div class="section-title">Shift Details</div>
+          <div id="shift-groups">
+            <!-- shift groups injected by JS -->
+          </div>
+          <button class="add-doc-btn" style="margin-top:6px;border:1.5px solid #38a169;padding:6px 14px;border-radius:6px" onclick="addShiftGroup()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#38a169" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Days Group
+          </button>
+
+        </div><!-- /dtab-details -->
+
+        <!-- Tab: Compliance Documents -->
+        <div id="dtab-compliance" class="form-body" style="display:none;padding:0">
+          <div style="display:flex;align-items:center;padding:11px 18px;background:#f0fff4;border-bottom:1px solid #c6f6d5">
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#276749">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38a169" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              All Compliance document are optional.
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="comp-table">
+              <thead><tr><th style="width:220px">Document Name</th><th style="width:180px">Expiry Date</th><th>File Name</th><th style="width:150px">Document Status</th><th style="width:140px">Actions</th><th style="width:36px"></th></tr></thead>
+              <tbody id="driver-comp-tbody"></tbody>
+            </table>
+          </div>
+          <div style="padding:14px 18px"><button class="add-doc-btn" onclick="addDriverDocRow()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#38a169" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add More Document</button></div>
+        </div>
+
+        <div class="form-footer">
+          <button class="btn-save" onclick="saveDriver()">Save</button>
+          <button class="btn-cancel" onclick="showDriverListing()">Cancel</button>
+        </div>
+      </div>
+    </div><!-- /driver-form -->
+
+  </div><!-- /module-driver -->
+
+  <!-- ════════ MODULE: EMPLOYEE ════════ -->
+  <div id="module-employee" style="display:none">
+
+    <!-- ══ EMPLOYEE LISTING ══ -->
+    <div id="employee-listing">
+      <div class="toolbar">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="Search"/>
+        </div>
+        <div class="spacer"></div>
+        <button class="btn">
+          <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+          Filters <svg viewBox="0 0 24 24" style="width:10px;height:10px"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <button class="btn">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+        <button class="btn" onclick="openUploadDrawer()">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload Employee
+        </button>
+        <button class="btn btn-primary" onclick="showEmployeeForm()">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Create New Employee
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="stat-bar" style="justify-content:space-between">
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:7px">
+            <div class="total-label"><b>50</b> Total Employee</div>
+            <div class="chip c-inactive"><span class="chip-dot"></span>1 Inactive</div>
+            <div class="chip c-active"><span class="chip-dot"></span>15 Active</div>
+            <div class="chip c-temp"><span class="chip-dot"></span>3 Male</div>
+            <div class="chip c-female"><span class="chip-dot"></span>10 Female</div>
+          </div>
+          <button class="btn" style="border-color:#38a169;color:#276749" onclick="showEmployeeMap()">
+            <svg viewBox="0 0 24 24" style="stroke:#38a169"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+            Map
+          </button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Employee Name</th>
+                <th>Employee ID</th>
+                <th>Employee Status</th>
+                <th>Mobile Number</th>
+                <th>Gender</th>
+                <th>Transport user</th>
+                <th style="text-align:right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="employee-tbody"></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <div class="rpp">Show <select><option>10</option><option>25</option><option>50</option></select> rows per page</div>
+          <div class="pinfo">1–14 of 50 results</div>
+          <div class="pbtns">
+            <button class="pbtn"><svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></button>
+            <button class="pbtn"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+            <button class="pbtn active">1</button>
+            <button class="pbtn">2</button>
+            <button class="pbtn">3</button>
+            <button class="pbtn"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+            <button class="pbtn"><svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg></button>
+          </div>
+        </div>
+      </div>
+    </div><!-- /employee-listing -->
+
+    <!-- ══ EMPLOYEE FORM ══ -->
+    <div id="employee-form" style="display:none">
+      <div class="form-header">
+        <div class="form-back" onclick="showEmployeeListing()">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          <span id="employee-form-back-label">Create New Employee</span>
+        </div>
+      </div>
+
+      <div class="form-card">
+        <div class="form-body">
+
+          <!-- Basic Details -->
+          <div class="section-title">Basic Details</div>
+          <div class="form-grid form-grid-3">
+            <div class="field"><label>First Name <span class="req">*</span></label><input type="text" id="e-fname" placeholder="Enter First Name"/></div>
+            <div class="field"><label>Middle Name</label><input type="text" id="e-mname" placeholder="Enter Middle Name"/></div>
+            <div class="field"><label>Last Name</label><input type="text" id="e-lname" placeholder="Enter Last Name"/></div>
+          </div>
+          <div class="form-grid form-grid-3">
+            <div class="field"><label>Employee ID <span class="req">*</span></label><input type="text" id="e-empid" placeholder="Enter Employee ID"/></div>
+            <div class="field"><label>Gender <span class="req">*</span></label>
+              <div class="sel-wrap"><select id="e-gender" class="placeholder" onchange="this.classList.remove('placeholder')"><option value="" disabled selected>Select Gender</option><option>Male</option><option>Female</option><option>Other</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+            </div>
+            <div class="field"><label>Email <span class="req">*</span></label><input type="text" id="e-email" placeholder="Enter Email"/></div>
+          </div>
+          <div class="form-grid form-grid-3">
+            <div class="field"><label>Mobile Number <span class="req">*</span></label><input type="text" id="e-mobile" placeholder="Enter Mobile Number"/></div>
+          </div>
+
+          <hr class="section-divider"/>
+
+          <!-- Employment Details -->
+          <div class="section-title">Employment Details</div>
+          <div class="form-grid form-grid-1" style="max-width:340px">
+            <div class="field"><label>Teams <span class="req">*</span></label>
+              <div class="sel-wrap"><select><option>Product</option><option>Engineering</option><option>Design</option><option>Operations</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+            </div>
+          </div>
+          <div class="form-grid form-grid-1" style="max-width:340px">
+            <div class="field"><label>Office <span class="req">*</span></label>
+              <div class="sel-wrap"><select><option>MTAP Technologies</option><option>ABC Towers</option><option>Tech Park One</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+            </div>
+          </div>
+          <div class="form-grid form-grid-1" style="max-width:340px">
+            <div class="field"><label>Employee Status <span class="req">*</span></label>
+              <div class="sel-wrap"><select id="e-status"><option>Active</option><option>Inactive</option><option>Temporarily</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+            </div>
+          </div>
+          <div class="form-grid form-grid-1" style="max-width:340px">
+            <div class="field"><label>Employement Type <span class="req">*</span></label>
+              <div class="sel-wrap"><select class="placeholder" onchange="this.classList.remove('placeholder')"><option value="" disabled selected>Select</option><option>Full Time</option><option>Part Time</option><option>Contract</option><option>Intern</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+            </div>
+          </div>
+
+          <hr class="section-divider"/>
+
+          <!-- Transport and Shift Details -->
+          <div class="section-title">Transport and Shift Details</div>
+          <div class="form-grid form-grid-1" style="max-width:340px">
+            <div class="field"><label>Transport Opted <span class="req">*</span></label>
+              <div class="sel-wrap"><select id="e-transport" onchange="handleTransportOpted(this)"><option value="yes" selected>Yes</option><option value="no">No</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+            </div>
+          </div>
+
+          <!-- Transport sub-section (only when Yes) -->
+          <div id="transport-details" style="background:#fafbfc;border:1px solid #e8ecf0;border-radius:8px;padding:18px;margin-top:6px">
+
+            <!-- Pickup Home -->
+            <div style="font-size:12.5px;font-weight:700;color:#1a202c;margin-bottom:12px">Pickup Home</div>
+            <div class="form-grid form-grid-3">
+              <div class="field"><label>Address <span class="req">*</span></label>
+                <div class="addr-wrap"><input type="text" placeholder="Add Address" style="padding-right:32px"/><svg class="addr-icon" viewBox="0 0 24 24" style="top:50%;transform:translateY(-50%)"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+              </div>
+              <div class="field"><label>Latitude and Longitude</label><input type="text" value="12.93413324, 77.69501865"/></div>
+              <div class="field"><label>Locality</label><input type="text" placeholder="Auto filled"/></div>
+            </div>
+
+            <!-- Nodal Pickup -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin:18px 0 12px">
+              <div style="font-size:12.5px;font-weight:700;color:#1a202c">Nodal Pickup</div>
+              <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#4a5568;cursor:pointer"><input type="checkbox"/> Add auto suggest Nodal</label>
+            </div>
+            <div class="form-grid form-grid-3">
+              <div class="field"><label>Nodal point <span class="req">*</span></label>
+                <div class="sel-wrap"><select class="placeholder" onchange="this.classList.remove('placeholder')"><option value="" disabled selected>Add Address</option><option>Nitikhand 3, Indirapuram</option><option>Sector 62, Noida</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+              </div>
+              <div class="field"><label>Latitude and Longitude</label><input type="text" value="00"/></div>
+              <div class="field"><label>Locality</label><input type="text" placeholder="Auto filled"/></div>
+            </div>
+
+            <!-- Drop Home -->
+            <div style="display:flex;align-items:center;gap:12px;margin:18px 0 12px">
+              <div style="font-size:12.5px;font-weight:700;color:#1a202c">Drop Home</div>
+              <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#4a5568;cursor:pointer"><input type="checkbox"/> same as pickup Home</label>
+            </div>
+            <div class="form-grid form-grid-3">
+              <div class="field"><label>Address <span class="req">*</span></label>
+                <div class="addr-wrap"><input type="text" placeholder="Add Address" style="padding-right:32px"/><svg class="addr-icon" viewBox="0 0 24 24" style="top:50%;transform:translateY(-50%)"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>
+              </div>
+              <div class="field"><label>Latitude and Longitude</label><input type="text" value="12.93413324, 77.69501865"/></div>
+              <div class="field"><label>Locality</label><input type="text" placeholder="Auto filled"/></div>
+            </div>
+
+            <!-- Drop Nodal -->
+            <div style="font-size:12.5px;font-weight:700;color:#1a202c;margin:18px 0 12px">Drop Nodal</div>
+            <div class="form-grid form-grid-3">
+              <div class="field"><label>Drop Nodal <span class="req">*</span></label>
+                <div class="sel-wrap"><select class="placeholder" onchange="this.classList.remove('placeholder')"><option value="" disabled selected>Add Address</option><option>Nitikhand 3, Indirapuram</option><option>Sector 62, Noida</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+              </div>
+              <div class="field"><label>Latitude and Longitude</label><input type="text" value="12.93413324, 77.69501865"/></div>
+              <div class="field"><label>Locality</label><input type="text" placeholder="Auto filled"/></div>
+            </div>
+
+            <!-- Others -->
+            <div style="font-size:12.5px;font-weight:700;color:#1a202c;margin:18px 0 12px">Others</div>
+            <div class="form-grid form-grid-3">
+              <div class="field"><label>Billing Zone <span class="req">*</span></label>
+                <div class="sel-wrap"><select><option>Zone B – North India</option><option>Zone A – South India</option><option>Zone C – West India</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+              </div>
+              <div class="field"><label>Home to Office KM <span class="req">*</span></label><input type="text" placeholder="1 Km"/></div>
+              <div class="field"><label>Nodal to Office KM <span class="req">*</span></label><input type="text" placeholder="1.9 Km"/></div>
+            </div>
+
+            <!-- Special Case (conditional) -->
+            <div style="font-size:12.5px;font-weight:700;color:#1a202c;margin:18px 0 12px">Special Case</div>
+            <div class="form-grid form-grid-3" id="special-case-row">
+              <div class="field"><label>Special Case <span class="req">*</span></label>
+                <div class="sel-wrap"><select id="e-special-case" onchange="handleSpecialCase(this)"><option value="no" selected>No</option><option value="yes">Yes</option></select><svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+                <div class="status-tag" id="special-case-tag" style="display:none;background:#f0fff4;border-color:#68d391;color:#276749"></div>
+              </div>
+              <div class="field" id="special-eff-date" style="display:none"><label>Effective from Date <span class="req">*</span></label>
+                <div class="date-wrap"><input type="text" id="e-eff-date" value="22-10-2025"/><svg class="date-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+              </div>
+              <div class="field" id="special-valid-date" style="display:none"><label>Valid Till Date</label>
+                <div class="date-wrap"><input type="text" id="e-valid-date" placeholder="Select"/><svg class="date-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+              </div>
+            </div>
+          </div><!-- /transport-details -->
+
+        </div>
+
+        <div class="form-footer">
+          <button class="btn-save" onclick="saveEmployee()">Save</button>
+          <button class="btn-cancel" onclick="showEmployeeListing()">Cancel</button>
+        </div>
+      </div>
+    </div><!-- /employee-form -->
+
+    <!-- ══ EMPLOYEE MAP VIEW ══ -->
+    <div id="employee-map" style="display:none">
+      <!-- Map header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="form-back" onclick="showEmployeeListing()" style="font-size:15px;font-weight:700;color:#1a202c">
+          <svg viewBox="0 0 24 24" style="width:18px;height:18px"><polyline points="15 18 9 12 15 6"/></svg>
+          Employee Master Map
+        </div>
+        <div class="map-toggle">
+          <button class="map-toggle-btn active" id="map-home-btn" onclick="setMapMode('home')">Home</button>
+          <button class="map-toggle-btn" id="map-nodal-btn" onclick="setMapMode('nodal')">Nodal</button>
+        </div>
+      </div>
+
+      <!-- Map canvas -->
+      <div class="map-canvas" id="map-canvas">
+        <!-- Search bar -->
+        <div class="map-search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" placeholder="Search by employee name, ID"/>
+        </div>
+        <!-- Selected count -->
+        <div class="map-selected-pill">20 Employee Selected</div>
+        <!-- Traffic toggle -->
+        <div class="map-traffic-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="1.8"><circle cx="12" cy="6" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="18" r="2.5"/></svg>
+        </div>
+
+        <!-- SVG map with markers -->
+        <svg id="map-svg" viewBox="0 0 1000 640" preserveAspectRatio="xMidYMid slice" style="width:100%;height:100%;display:block">
+          <!-- background streets -->
+          <rect width="1000" height="640" fill="#eef0e8"/>
+          <g stroke="#fff" stroke-width="6" fill="none" opacity="0.9">
+            <path d="M0 180 L1000 140"/>
+            <path d="M0 320 L1000 300"/>
+            <path d="M0 460 L1000 480"/>
+            <path d="M180 0 L220 640"/>
+            <path d="M480 0 L520 640"/>
+            <path d="M760 0 L800 640"/>
+          </g>
+          <g stroke="#e2e6da" stroke-width="2" fill="none">
+            <path d="M0 100 L1000 80"/><path d="M0 250 L1000 230"/><path d="M0 400 L1000 410"/><path d="M0 550 L1000 560"/>
+            <path d="M100 0 L130 640"/><path d="M340 0 L370 640"/><path d="M620 0 L650 640"/><path d="M900 0 L920 640"/>
+          </g>
+          <!-- green park areas -->
+          <rect x="60" y="430" width="180" height="150" rx="10" fill="#d4e6c8" opacity="0.7"/>
+          <rect x="820" y="60" width="140" height="120" rx="10" fill="#d4e6c8" opacity="0.7"/>
+
+          <!-- Cluster circles (zoomed-out groups) -->
+          <g class="map-cluster" onmouseenter="showClusterTooltip(event)" onmouseleave="hideClusterTooltip()" style="cursor:pointer">
+            <circle cx="500" cy="190" r="34" fill="#fff" stroke="#3182ce" stroke-width="4"/>
+            <text x="500" y="186" text-anchor="middle" font-size="18" font-weight="700" fill="#1a202c">06</text>
+            <text x="486" y="204" text-anchor="middle" font-size="10" font-weight="700" fill="#3182ce">M-4</text>
+            <text x="514" y="204" text-anchor="middle" font-size="10" font-weight="700" fill="#c5377f">F-2</text>
+          </g>
+          <g class="map-cluster" onmouseenter="showClusterTooltip(event)" onmouseleave="hideClusterTooltip()" style="cursor:pointer">
+            <circle cx="620" cy="400" r="34" fill="#fff" stroke="#3182ce" stroke-width="4"/>
+            <text x="620" y="396" text-anchor="middle" font-size="18" font-weight="700" fill="#1a202c">06</text>
+            <text x="606" y="414" text-anchor="middle" font-size="10" font-weight="700" fill="#3182ce">M-4</text>
+            <text x="634" y="414" text-anchor="middle" font-size="10" font-weight="700" fill="#c5377f">F-2</text>
+          </g>
+          <g class="map-cluster" onmouseenter="showClusterTooltip(event)" onmouseleave="hideClusterTooltip()" style="cursor:pointer">
+            <circle cx="320" cy="470" r="34" fill="#fff" stroke="#3182ce" stroke-width="4"/>
+            <text x="320" y="466" text-anchor="middle" font-size="18" font-weight="700" fill="#1a202c">06</text>
+            <text x="306" y="484" text-anchor="middle" font-size="10" font-weight="700" fill="#3182ce">M-4</text>
+            <text x="334" y="484" text-anchor="middle" font-size="10" font-weight="700" fill="#c5377f">F-2</text>
+          </g>
+
+          <!-- Individual markers (M=male blue, F=female pink) -->
+          <!-- each calls showMarkerTooltip with name, id, gender -->
+          <g class="map-marker" onmouseenter="showMarkerTooltip(event,'Rajesh Kumar','Emp12762898','M')" onmouseleave="hideMarkerTooltip()" style="cursor:pointer">
+            <path d="M385 270 C385 258 403 258 403 270 C403 280 394 292 394 292 C394 292 385 280 385 270 Z" fill="#3182ce"/>
+            <circle cx="394" cy="270" r="6" fill="#fff"/><text x="394" y="274" text-anchor="middle" font-size="8" font-weight="700" fill="#3182ce">M</text>
+          </g>
+          <g class="map-marker" onmouseenter="showMarkerTooltip(event,'Amit Sharma','Emp12762811','M')" onmouseleave="hideMarkerTooltip()" style="cursor:pointer">
+            <path d="M435 280 C435 268 453 268 453 280 C453 290 444 302 444 302 C444 302 435 290 435 270 Z" fill="#3182ce"/>
+            <circle cx="444" cy="280" r="6" fill="#fff"/><text x="444" y="284" text-anchor="middle" font-size="8" font-weight="700" fill="#3182ce">M</text>
+          </g>
+          <g class="map-marker" onmouseenter="showMarkerTooltip(event,'Suvira','Emp12762898','F')" onmouseleave="hideMarkerTooltip()" style="cursor:pointer">
+            <path d="M500 285 C500 273 518 273 518 285 C518 295 509 307 509 307 C509 307 500 295 500 285 Z" fill="#c5377f"/>
+            <circle cx="509" cy="285" r="6" fill="#fff"/><text x="509" y="289" text-anchor="middle" font-size="8" font-weight="700" fill="#c5377f">F</text>
+          </g>
+          <g class="map-marker" onmouseenter="showMarkerTooltip(event,'Priya Nair','Emp12762877','F')" onmouseleave="hideMarkerTooltip()" style="cursor:pointer">
+            <path d="M395 305 C395 293 413 293 413 305 C413 315 404 327 404 327 C404 327 395 315 395 305 Z" fill="#c5377f"/>
+            <circle cx="404" cy="305" r="6" fill="#fff"/><text x="404" y="309" text-anchor="middle" font-size="8" font-weight="700" fill="#c5377f">F</text>
+          </g>
+          <g class="map-marker" onmouseenter="showMarkerTooltip(event,'Neha Gupta','Emp12762866','F')" onmouseleave="hideMarkerTooltip()" style="cursor:pointer">
+            <path d="M455 310 C455 298 473 298 473 310 C473 320 464 332 464 332 C464 332 455 320 455 310 Z" fill="#c5377f"/>
+            <circle cx="464" cy="310" r="6" fill="#fff"/><text x="464" y="314" text-anchor="middle" font-size="8" font-weight="700" fill="#c5377f">F</text>
+          </g>
+          <g class="map-marker" onmouseenter="showMarkerTooltip(event,'Vikram Singh','Emp12762855','M')" onmouseleave="hideMarkerTooltip()" style="cursor:pointer">
+            <path d="M475 320 C475 308 493 308 493 320 C493 330 484 342 484 342 C484 342 475 330 475 320 Z" fill="#3182ce"/>
+            <circle cx="484" cy="320" r="6" fill="#fff"/><text x="484" y="324" text-anchor="middle" font-size="8" font-weight="700" fill="#3182ce">M</text>
+          </g>
+          <g class="map-marker" onmouseenter="showMarkerTooltip(event,'Rahul Verma','Emp12762844','M')" onmouseleave="hideMarkerTooltip()" style="cursor:pointer">
+            <path d="M355 330 C355 318 373 318 373 330 C373 340 364 352 364 352 C364 352 355 340 355 330 Z" fill="#3182ce"/>
+            <circle cx="364" cy="330" r="6" fill="#fff"/><text x="364" y="334" text-anchor="middle" font-size="8" font-weight="700" fill="#3182ce">M</text>
+          </g>
+          <g class="map-marker" onmouseenter="showMarkerTooltip(event,'Anjali Rao','Emp12762833','F')" onmouseleave="hideMarkerTooltip()" style="cursor:pointer">
+            <path d="M530 320 C530 308 548 308 548 320 C548 330 539 342 539 342 C539 342 530 330 530 320 Z" fill="#c5377f"/>
+            <circle cx="539" cy="320" r="6" fill="#fff"/><text x="539" y="324" text-anchor="middle" font-size="8" font-weight="700" fill="#c5377f">F</text>
+          </g>
+          <g class="map-marker" onmouseenter="showMarkerTooltip(event,'Karan Mehta','Emp12762822','M')" onmouseleave="hideMarkerTooltip()" style="cursor:pointer">
+            <path d="M400 375 C400 363 418 363 418 375 C418 385 409 397 409 397 C409 397 400 385 400 375 Z" fill="#3182ce"/>
+            <circle cx="409" cy="375" r="6" fill="#fff"/><text x="409" y="379" text-anchor="middle" font-size="8" font-weight="700" fill="#3182ce">M</text>
+          </g>
+          <g class="map-marker" onmouseenter="showMarkerTooltip(event,'Deepa Iyer','Emp12762811','F')" onmouseleave="hideMarkerTooltip()" style="cursor:pointer">
+            <path d="M460 385 C460 373 478 373 478 385 C478 395 469 407 469 407 C469 407 460 395 460 385 Z" fill="#c5377f"/>
+            <circle cx="469" cy="385" r="6" fill="#fff"/><text x="469" y="389" text-anchor="middle" font-size="8" font-weight="700" fill="#c5377f">F</text>
+          </g>
+        </svg>
+
+        <!-- Marker hover tooltip -->
+        <div id="map-marker-tooltip" class="map-tooltip" style="display:none">
+          <div class="mt-icon" id="mt-icon">M</div>
+          <div><div class="mt-name" id="mt-name">Rajesh Kumar</div><div class="mt-id" id="mt-id">Emp12762898</div></div>
+        </div>
+
+        <!-- Cluster hover tooltip -->
+        <div id="map-cluster-tooltip" class="map-cluster-tooltip" style="display:none">
+          <div class="mct-head">Total - 6</div>
+          <div class="mct-grid">
+            <div><div class="mct-name" style="color:#3182ce">Rajiv</div><div class="mct-id">Emp12762898</div></div>
+            <div><div class="mct-name" style="color:#c5377f">Suvira</div><div class="mct-id">Emp12762898</div></div>
+            <div><div class="mct-name" style="color:#3182ce">Rajiv</div><div class="mct-id">Emp12762898</div></div>
+            <div><div class="mct-name" style="color:#c5377f">Suvira</div><div class="mct-id">Emp12762898</div></div>
+            <div><div class="mct-name" style="color:#3182ce">Rajiv</div><div class="mct-id">Emp12762898</div></div>
+            <div><div class="mct-name" style="color:#c5377f">Suvira</div><div class="mct-id">Emp12762898</div></div>
+          </div>
+        </div>
+
+        <!-- Layer controls -->
+        <div class="map-layers">
+          <label class="map-layer-row"><span>Transport Boundary</span><span class="map-switch on" onclick="toggleSwitch(this)"><span class="map-knob"></span></span></label>
+          <label class="map-layer-row"><span>Zonewise View</span><span class="map-switch" onclick="toggleSwitch(this)"><span class="map-knob"></span></span></label>
+          <label class="map-layer-row"><span>Option 3</span><span class="map-switch on" onclick="toggleSwitch(this)"><span class="map-knob"></span></span></label>
+        </div>
+
+        <!-- Zoom controls -->
+        <div class="map-zoom">
+          <button onclick="alert('Locate me')"><svg viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="2"><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg></button>
+          <button onclick="mapZoom(1)"><svg viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+          <button onclick="mapZoom(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="#4a5568" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+        </div>
+      </div>
+    </div><!-- /employee-map -->
+
+  </div><!-- /module-employee -->
+</div><!-- /shell -->
+
+<script>
+/* ═══════════════════════════════════════
+   VEHICLE DATA
+═══════════════════════════════════════ */
+const vehicles = [
+  {id:1, num:'TN13E8232', code:'8232 (SBLT)',   type:'SBLT',       model:'Duster',     capacity:'05 Seater', vendor:'Ravi Kumar',  tracking:'app',  status:'inactive',    compliance:'yes', rating:4.5, driver1:'Ramesh Kumar', driver2:'', driver3:'', billingProfile:'bill-1', billingDate:'22-10-2024', address:'380, Nitikhamnd 3rd, Indirapuram', lat:'12.93413324, 77.69501865', locality:'Nitikhand 3, Indirapuram'},
+  {id:2, num:'TN13E8232', code:'8232 (SBLT)',   type:'SBLT',       model:'Duster',     capacity:'05 Seater', vendor:'Sona Travel', tracking:'both', status:'active',      compliance:'yes', rating:3.5, driver1:'Suresh Nair',  driver2:'', driver3:'', billingProfile:'bill-2', billingDate:'10-11-2024', address:'14, MG Road, Whitefield', lat:'12.96834, 77.74985', locality:'Whitefield, Bangalore'},
+  {id:3, num:'TN13E8232', code:'8232 (Adhoc)',  type:'Adhoc',      model:'Duster',     capacity:'05 Seater', vendor:'Ravi Sharma', tracking:'gps',  status:'blacklisted', compliance:'no',  rating:5.0, driver1:'Anil Verma',   driver2:'', driver3:'', billingProfile:'bill-1', billingDate:'01-09-2024', address:'7, HSR Layout, Sector 2', lat:'12.91219, 77.64164', locality:'HSR Layout, Bangalore'},
+  {id:4, num:'TN13E8232', code:'8232 (Adhoc)',  type:'Adhoc',      model:'Duster',     capacity:'05 Seater', vendor:'Ravi Sharma', tracking:'app',  status:'temporarily', compliance:'no',  rating:5.0, driver1:'Deepak Singh', driver2:'', driver3:'', billingProfile:'bill-3', billingDate:'15-10-2024', address:'22, Koramangala 4th Block', lat:'12.93452, 77.62451', locality:'Koramangala, Bangalore'},
+  {id:5, num:'KA05AB9010', code:'9010 (SBLT)',  type:'SBLT',       model:'Innova',     capacity:'07 Seater', vendor:'City Cabs',   tracking:'both', status:'active',      compliance:'yes', rating:4.2, driver1:'Ramesh Kumar', driver2:'Suresh Nair', driver3:'', billingProfile:'bill-4', billingDate:'20-08-2024', address:'55, Indiranagar 100ft Road', lat:'12.97194, 77.64066', locality:'Indiranagar, Bangalore'},
+  {id:6, num:'KA05CD4521', code:'4521 (Adhoc)', type:'Adhoc',      model:'Swift Dzire',capacity:'04 Seater', vendor:'Sona Travel', tracking:'none', status:'inactive',    compliance:'no',  rating:3.8, driver1:'Anil Verma',   driver2:'', driver3:'', billingProfile:'bill-2', billingDate:'05-07-2024', address:'8, Jayanagar 4th Block', lat:'12.92506, 77.58327', locality:'Jayanagar, Bangalore'},
+  {id:7, num:'MH12XY7731', code:'7731 (SBLT)',  type:'SBLT',       model:'Ertiga',     capacity:'06 Seater', vendor:'Ravi Kumar',  tracking:'gps',  status:'active',      compliance:'yes', rating:4.7, driver1:'Deepak Singh', driver2:'', driver3:'', billingProfile:'bill-1', billingDate:'12-10-2024', address:'3, Electronic City Phase 1', lat:'12.84621, 77.66047', locality:'Electronic City, Bangalore'},
+];
+
+let currentMode = 'create'; // 'create' | 'edit'
+let currentVehicleId = null;
+
+/* ═══════════════════════════════════════
+   LISTING TAB SWITCHING
+═══════════════════════════════════════ */
+function switchListingTab(tab){
+  const isVehicles = tab === 'vehicles';
+  document.getElementById('listing-vehicles').style.display = isVehicles ? 'block' : 'none';
+  document.getElementById('listing-approval').style.display = isVehicles ? 'none' : 'block';
+  document.getElementById('tab-vehicles-btn').className = 'tab' + (isVehicles ? ' active' : '');
+  document.getElementById('tab-approval-btn').className  = 'tab' + (isVehicles ? '' : ' active');
+}
+
+/* ═══════════════════════════════════════
+   PAGE NAVIGATION
+═══════════════════════════════════════ */
+function showForm(){
+  currentMode = 'create';
+  currentVehicleId = null;
+  currentStatus = 'temporarily';
+  resetForm();
+  document.getElementById('form-back-label').textContent = 'Create new vehicle';
+  document.getElementById('page-listing').style.display = 'none';
+  document.getElementById('page-form').style.display = 'block';
+  document.getElementById('topbar-label').textContent = 'Create Vehicle';
+  document.querySelector('.main').scrollTop = 0;
+  // reset to first tab
+  switchFormTab(document.querySelector('.form-tab'), 'tab-details');
+}
+
+function showEditForm(vehicleId){
+  currentMode = 'edit';
+  currentVehicleId = vehicleId;
+  const v = vehicles.find(v => v.id === vehicleId);
+  if(!v) return;
+  currentStatus = v.status;
+  populateForm(v);
+  document.getElementById('form-back-label').textContent = 'Edit vehicle';
+  document.getElementById('page-listing').style.display = 'none';
+  document.getElementById('page-form').style.display = 'block';
+  document.getElementById('topbar-label').textContent = 'Edit';
+  document.querySelector('.main').scrollTop = 0;
+  switchFormTab(document.querySelector('.form-tab'), 'tab-details');
+}
+
+function showListing(){
+  document.getElementById('page-listing').style.display = 'block';
+  document.getElementById('page-form').style.display = 'none';
+  document.getElementById('topbar-label').textContent = 'Driver Masters Setting landing page';
+}
+
+/* ═══════════════════════════════════════
+   FORM POPULATE / RESET
+═══════════════════════════════════════ */
+function setVal(id, val){ const el=document.getElementById(id); if(el) el.value=val; }
+function setSelVal(id, val){
+  const el=document.getElementById(id);
+  if(!el) return;
+  for(let i=0;i<el.options.length;i++){
+    if(el.options[i].value===val||el.options[i].text===val){ el.selectedIndex=i; el.classList.remove('placeholder'); return; }
+  }
+}
+
+function populateForm(v){
+  setVal('f-vnum',  v.num);
+  setVal('f-vcode', v.code);
+  setSelVal('f-vtype', v.type);
+  setVal('f-vmodel', v.model);
+  setSelVal('f-vcap', v.capacity);
+  setSelVal('f-vendor', v.vendor);
+  setSelVal('f-tracking', v.tracking);
+  handleTrackingMode(document.getElementById('f-tracking'));
+  setSelVal('f-driver1', v.driver1);
+  setSelVal('f-driver2', v.driver2);
+  setSelVal('f-driver3', v.driver3);
+  setVal('f-billing-profile', v.billingProfile);
+  setVal('f-billing-date', v.billingDate);
+  setVal('f-address', v.address);
+  setVal('f-lat', v.lat);
+  setVal('f-locality', v.locality);
+  // status native select
+  setSelVal('f-status', v.status);
+  document.getElementById('status-tag').style.display = 'none';
+}
+
+function resetForm(){
+  ['f-vnum','f-vcode','f-vmodel','f-billing-profile','f-billing-date','f-address','f-lat','f-locality'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  ['f-vtype','f-vcap','f-vendor','f-driver1','f-driver2','f-driver3'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){ el.selectedIndex=0; el.classList.add('placeholder'); }
+  });
+  const fStatus = document.getElementById('f-status');
+  if(fStatus) fStatus.selectedIndex=0;
+  document.getElementById('status-tag').style.display='none';
+  document.getElementById('field-imei').style.display='none';
+  document.getElementById('field-gps-sim').style.display='none';
+  document.getElementById('field-primary-tracking').style.display='none';
+}
+
+function handleFormStatusChange(sel){
+  // just show a tag reflecting the selection
+  const tag = document.getElementById('status-tag');
+  if(sel.value){
+    const label = sel.options[sel.selectedIndex].text;
+    tag.innerHTML = `New Status "${label}" | Effective From 22-10-2025
+      <span class="xtag" onclick="this.parentElement.style.display='none'">
+        <svg viewBox="0 0 24 24" width="8" height="8" stroke="#fff" fill="none" stroke-width="3" stroke-linecap="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg></span>`;
+    tag.style.display = 'inline-flex';
+  } else {
+    tag.style.display = 'none';
+  }
+}
+
+/* ═══════════════════════════════════════
+   FORM TABS
+═══════════════════════════════════════ */
+function switchFormTab(el, tabId){
+  document.querySelectorAll('.form-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['tab-details','tab-compliance'].forEach(id=>{
+    document.getElementById(id).style.display = id===tabId ? 'block' : 'none';
+  });
+}
+
+/* ═══════════════════════════════════════
+   TRACKING MODE CONDITIONAL FIELDS
+═══════════════════════════════════════ */
+function handleTrackingMode(sel){
+  const val = sel.value;
+  const showGPS  = val==='gps' || val==='both';
+  const showBoth = val==='both';
+  document.getElementById('field-imei').style.display            = showGPS  ? 'block' : 'none';
+  document.getElementById('field-gps-sim').style.display         = showGPS  ? 'block' : 'none';
+  document.getElementById('field-primary-tracking').style.display = showBoth ? 'block' : 'none';
+}
+
+/* ═══════════════════════════════════════
+   STATUS MODAL — triggered from TABLE rows
+═══════════════════════════════════════ */
+const statusConfig = {
+  active:      {label:'Active',      badgeCls:'b-active'},
+  inactive:    {label:'Inactive',    badgeCls:'b-inactive'},
+  temporarily: {label:'Temporarily', badgeCls:'b-temp'},
+  blacklisted: {label:'Blacklisted', badgeCls:'b-blacklisted'},
+};
+
+let modalTargetVehicleId = null;
+
+function openStatusModal(vehicleId){
+  modalTargetVehicleId = vehicleId;
+  const v = vehicles.find(v=>v.id===vehicleId);
+  const sel = document.getElementById('modal-status-sel');
+  sel.value = v ? v.status : 'active';
+  document.getElementById('modal-valid-date').value = '';
+  document.getElementById('modal-remark').value = '';
+  handleModalStatusChange(sel);
+  document.getElementById('status-modal-overlay').style.display = 'flex';
+}
+
+function closeStatusModal(e){
+  if(e && e.target !== document.getElementById('status-modal-overlay')) return;
+  document.getElementById('status-modal-overlay').style.display = 'none';
+}
+
+function handleModalStatusChange(sel){
+  const val = sel.value;
+  const needsValidTill = val==='temporarily' || val==='blacklisted';
+  document.getElementById('modal-valid-till-wrap').style.display = needsValidTill ? 'block' : 'none';
+  const btn = document.getElementById('modal-confirm-btn');
+  btn.style.color = val ? '#1a202c' : '#a0aec0';
+  btn.style.fontWeight = val ? '700' : '600';
+}
+
+function confirmStatus(){
+  const sel      = document.getElementById('modal-status-sel');
+  const newStatus = sel.value;
+  if(!newStatus || modalTargetVehicleId===null) return;
+
+  const cfg = statusConfig[newStatus];
+  let badge;
+
+  if(typeof modalTargetVehicleId === 'string' && modalTargetVehicleId.startsWith('driver-')){
+    // Driver row
+    const did = parseInt(modalTargetVehicleId.replace('driver-',''), 10);
+    const d = drivers.find(x=>x.id===did);
+    if(d) d.status = newStatus;
+    badge = document.querySelector(`[data-did="${did}"] .badge`);
+  } else if(typeof modalTargetVehicleId === 'string' && modalTargetVehicleId.startsWith('employee-')){
+    // Employee row
+    const eid = parseInt(modalTargetVehicleId.replace('employee-',''), 10);
+    const e = employees.find(x=>x.id===eid);
+    if(e) e.status = newStatus;
+    badge = document.querySelector(`[data-eid="${eid}"] .badge`);
+  } else {
+    // Vehicle row
+    const v = vehicles.find(v=>v.id===modalTargetVehicleId);
+    if(v) v.status = newStatus;
+    badge = document.querySelector(`[data-vid="${modalTargetVehicleId}"] .badge`);
+  }
+
+  if(badge){
+    badge.className = 'badge ' + cfg.badgeCls;
+    const svg = badge.querySelector('svg');
+    badge.textContent = cfg.label + ' ';
+    if(svg) badge.appendChild(svg);
+  }
+
+  document.getElementById('status-modal-overlay').style.display = 'none';
+}
+
+/* ═══════════════════════════════════════
+   SAVE
+═══════════════════════════════════════ */
+function saveVehicle(){
+  const vNum = document.getElementById('f-vnum');
+  if(vNum && !vNum.value.trim()){
+    vNum.style.borderColor='#e53e3e';
+    vNum.focus();
+    return;
+  }
+  alert(currentMode==='edit' ? 'Vehicle updated successfully!' : 'Vehicle created successfully!');
+  showListing();
+}
+
+/* ═══════════════════════════════════════
+   COMPLIANCE DOCS TABLE
+═══════════════════════════════════════ */
+const defaultDocs = ['Registration Certificate','Tax Certificate','Permit','Insurance','Fitness','PUC','Form 42'];
+let docRows = defaultDocs.map((name,i)=>({id:i+1, name, expiry:'', fileName:'', status:'pending'}));
+let nextDocId = defaultDocs.length + 1;
+
+function renderCompTable(){
+  const tbody = document.getElementById('comp-tbody');
+  tbody.innerHTML = docRows.map(row => `
+    <tr id="doc-row-${row.id}">
+      <td>${row.id <= defaultDocs.length
+        ? `<span class="doc-name">${row.name}</span>`
+        : `<input type="text" class="expiry-input" style="width:160px" placeholder="Document name" value="${row.name}" oninput="updateDoc(${row.id},'name',this.value)"/>`}
+      </td>
+      <td><input type="text" class="expiry-input" placeholder="dd-mm-yyyy" value="${row.expiry}"
+        oninput="updateDoc(${row.id},'expiry',this.value)"
+        onfocus="this.placeholder=''" onblur="this.placeholder='dd-mm-yyyy'"/></td>
+      <td>${row.fileName
+        ? `<span class="file-name-text">${row.fileName}</span>`
+        : `<label class="file-upload-btn"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload file<input type="file" style="display:none" onchange="handleFileUpload(${row.id},this)"/></label>`}
+      </td>
+      <td><span class="doc-status-badge ${row.fileName?'ds-uploaded':'ds-pending'}" onclick="cycleStatus(${row.id})">${row.fileName?'Uploaded':'Pending'}</span></td>
+      <td><div class="doc-actions">
+        <div class="doc-act" onclick="editDoc(${row.id})"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+        <div class="doc-act"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <div class="doc-act"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+        <div class="doc-act danger" onclick="deleteDoc(${row.id})"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></div>
+      </div></td>
+      <td></td>
+    </tr>`).join('');
+}
+
+function updateDoc(id,field,val){ const r=docRows.find(r=>r.id===id); if(r) r[field]=val; }
+function handleFileUpload(id,input){ const r=docRows.find(r=>r.id===id); if(r&&input.files[0]){r.fileName=input.files[0].name;r.status='uploaded';renderCompTable();} }
+function deleteDoc(id){ docRows=docRows.filter(r=>r.id!==id); renderCompTable(); }
+function editDoc(id){ const r=docRows.find(r=>r.id===id); if(r){const n=prompt('Edit document name:',r.name);if(n){r.name=n;renderCompTable();}} }
+function cycleStatus(id){ const r=docRows.find(r=>r.id===id); if(!r)return; const s=['pending','uploaded','expired']; r.status=s[(s.indexOf(r.status)+1)%s.length]; renderCompTable(); }
+function addDocRow(){ docRows.push({id:nextDocId++,name:'',expiry:'',fileName:'',status:'pending'}); renderCompTable(); setTimeout(()=>{const l=document.querySelector('#comp-tbody tr:last-child input[placeholder="Document name"]');if(l)l.focus();},50); }
+
+// init
+renderCompTable();
+updateStatusBadgeUI('temporarily');
+</script>
+<!-- ══ UPDATE STATUS MODAL ══ -->
+<div id="status-modal-overlay" onclick="closeStatusModal(event)" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:500;display:none;align-items:center;justify-content:center">
+  <div id="status-modal" onclick="event.stopPropagation()" style="background:#fff;border-radius:12px;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden">
+    <div style="padding:18px 20px 14px;border-bottom:1px solid #f0f2f5">
+      <div style="font-size:14px;font-weight:700;color:#1a202c">Update Status</div>
+    </div>
+    <div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px">
+      <!-- Status -->
+      <div class="field">
+        <label>Status <span class="req">*</span></label>
+        <div class="sel-wrap">
+          <select id="modal-status-sel" onchange="handleModalStatusChange(this)">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="temporarily" selected>Temporarily</option>
+            <option value="blacklisted">Blacklisted</option>
+          </select>
+          <svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <!-- Effective from date -->
+      <div class="field">
+        <label>Effective from which date</label>
+        <div class="date-wrap">
+          <input type="text" id="modal-eff-date" value="22-10-2025" style="width:100%;padding:7px 36px 7px 10px;font-size:12px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#2d3748;outline:none;font-family:inherit"/>
+          <svg class="date-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+      </div>
+      <!-- Valid till date — hidden for Active / Inactive -->
+      <div class="field" id="modal-valid-till-wrap">
+        <label>Valid Till Date</label>
+        <div class="date-wrap">
+          <input type="text" id="modal-valid-date" placeholder="Select" style="width:100%;padding:7px 36px 7px 10px;font-size:12px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#2d3748;outline:none;font-family:inherit"/>
+          <svg class="date-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        </div>
+      </div>
+      <!-- Status remark -->
+      <div class="field">
+        <label>Status Remark</label>
+        <input type="text" id="modal-remark" placeholder="Enter" style="width:100%;padding:7px 10px;font-size:12px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#2d3748;outline:none;font-family:inherit"/>
+      </div>
+    </div>
+    <!-- Buttons -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #f0f2f5">
+      <button onclick="closeStatusModal()" style="padding:13px;font-size:13px;font-weight:600;color:#38a169;background:#fff;border:none;border-right:1px solid #f0f2f5;cursor:pointer;font-family:inherit;transition:background .1s" onmouseover="this.style.background='#f0fff4'" onmouseout="this.style.background='#fff'">Cancel</button>
+      <button onclick="confirmStatus()" id="modal-confirm-btn" style="padding:13px;font-size:13px;font-weight:600;color:#a0aec0;background:#fff;border:none;cursor:pointer;font-family:inherit;transition:all .1s" onmouseover="this.style.background='#f7fafc'" onmouseout="this.style.background='#fff'">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ UPLOAD VEHICLE DRAWER ══ -->
+<div id="upload-overlay" onclick="handleOverlayClick(event)" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:400">
+  <div id="upload-drawer" onclick="event.stopPropagation()" style="position:absolute;right:0;top:0;bottom:0;width:520px;background:#fff;display:flex;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,.12)">
+
+    <!-- Header -->
+    <div style="border-bottom:1px solid #f0f2f5">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px 14px">
+        <div style="font-size:16px;font-weight:700;color:#1a202c">Upload Vehicle</div>
+        <div onclick="closeUploadDrawer()" style="cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;color:#718096;transition:background .1s" onmouseover="this.style.background='#f7fafc'" onmouseout="this.style.background='transparent'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </div>
+      </div>
+      <!-- Prototype outcome toggle -->
+      <div style="display:flex;align-items:center;gap:0;padding:0 24px 14px">
+        <span style="font-size:11px;font-weight:600;color:#a0aec0;margin-right:10px;text-transform:uppercase;letter-spacing:.05em">Prototype:</span>
+        <div style="display:flex;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;font-size:11.5px;font-weight:600">
+          <button id="toggle-error-btn" onclick="setOutcome('error')"
+            style="padding:4px 14px;border:none;cursor:pointer;font-family:inherit;font-size:11.5px;font-weight:600;background:#e53e3e;color:#fff;transition:all .15s">
+            Show Errors
+          </button>
+          <button id="toggle-success-btn" onclick="setOutcome('success')"
+            style="padding:4px 14px;border:none;cursor:pointer;font-family:inherit;font-size:11.5px;font-weight:600;background:#fff;color:#a0aec0;transition:all .15s">
+            Show Success
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div style="flex:1;overflow-y:auto;padding:24px">
+
+      <!-- Section label -->
+      <div style="font-size:13px;font-weight:700;color:#1a202c;margin-bottom:14px">Upload File</div>
+
+      <!-- ── STATE 1: Idle (drop zone) ── -->
+      <div id="upload-state-idle">
+        <label id="drop-zone" for="upload-file-input" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;border:2px dashed #cbd5e0;border-radius:8px;padding:36px 20px;cursor:pointer;text-align:center;transition:border-color .15s;background:#fafbfc">
+          <button type="button" onclick="document.getElementById('upload-file-input').click()" style="padding:8px 20px;font-size:12px;font-weight:600;color:#276749;background:#fff;border:1.5px solid #38a169;border-radius:6px;cursor:pointer;font-family:inherit">Browse From Device</button>
+          <div style="font-size:11px;color:#a0aec0;line-height:1.6">Import / Export<br>Download a sample CSV file, then upload it</div>
+          <input type="file" id="upload-file-input" accept=".csv,.xlsx" style="display:none" onchange="handleFileSelect(this)"/>
+        </label>
+
+        <!-- Or divider -->
+        <div style="display:flex;align-items:center;gap:12px;margin:20px 0">
+          <div style="flex:1;height:1px;background:#e8ecf0"></div>
+          <span style="font-size:12px;color:#a0aec0">Or</span>
+          <div style="flex:1;height:1px;background:#e8ecf0"></div>
+        </div>
+
+        <!-- Template download -->
+        <div style="font-size:13px;font-weight:700;color:#1a202c;margin-bottom:12px">Need a template ?</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#f0fff4;border:1px solid #c6f6d5;border-radius:8px;padding:14px 16px;cursor:pointer">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#276749">Download Sample CSV</div>
+            <div style="font-size:11px;color:#4a5568;margin-top:2px">Use this sample to fill vehicle data</div>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38a169" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+        </div>
+      </div>
+
+      <!-- ── STATE 2: Uploading (progress) ── -->
+      <div id="upload-state-progress" style="display:none">
+        <div style="border:2px dashed #cbd5e0;border-radius:8px;padding:36px 20px;display:flex;flex-direction:column;align-items:center;gap:14px;background:#fafbfc">
+          <div id="upload-filename" style="font-size:13px;font-weight:600;color:#1a202c">abc.csv</div>
+          <div style="width:100%;background:#e8ecf0;border-radius:20px;height:8px;overflow:hidden">
+            <div id="upload-progress-bar" style="height:100%;background:#38a169;border-radius:20px;width:0%;transition:width .2s"></div>
+          </div>
+          <div id="upload-progress-pct" style="font-size:11px;font-weight:600;color:#276749">0%</div>
+          <button onclick="cancelUpload()" style="padding:6px 18px;font-size:12px;font-weight:500;color:#4a5568;background:#fff;border:1px solid #d1d9e0;border-radius:6px;cursor:pointer;font-family:inherit">Cancel Upload</button>
+        </div>
+
+        <!-- Or divider -->
+        <div style="display:flex;align-items:center;gap:12px;margin:20px 0">
+          <div style="flex:1;height:1px;background:#e8ecf0"></div>
+          <span style="font-size:12px;color:#a0aec0">Or</span>
+          <div style="flex:1;height:1px;background:#e8ecf0"></div>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:#1a202c;margin-bottom:12px">Need a template ?</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#f0fff4;border:1px solid #c6f6d5;border-radius:8px;padding:14px 16px;cursor:pointer">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#276749">Download Sample CSV</div>
+            <div style="font-size:11px;color:#4a5568;margin-top:2px">Use this sample to fill vehicle data</div>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38a169" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+        </div>
+      </div>
+
+      <!-- ── STATE 3: File ready (reupload) ── -->
+      <div id="upload-state-ready" style="display:none">
+        <div style="border:1.5px solid #c6f6d5;border-radius:8px;padding:28px 20px;display:flex;flex-direction:column;align-items:center;gap:10px;background:#fff;text-align:center">
+          <div style="display:flex;align-items:center;gap:6px">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            <span id="ready-filename" style="font-size:13px;font-weight:600;color:#1a202c">xyz name.csv</span>
+          </div>
+          <div id="ready-filesize" style="font-size:11px;color:#a0aec0">Files size 342KB</div>
+          <label style="display:inline-block;margin-top:4px">
+            <button type="button" onclick="document.getElementById('reupload-input').click()" style="padding:6px 18px;font-size:12px;font-weight:500;color:#276749;background:#fff;border:1.5px solid #38a169;border-radius:6px;cursor:pointer;font-family:inherit">Reupload</button>
+            <input type="file" id="reupload-input" accept=".csv,.xlsx" style="display:none" onchange="handleFileSelect(this)"/>
+          </label>
+        </div>
+
+        <!-- Or divider -->
+        <div style="display:flex;align-items:center;gap:12px;margin:20px 0">
+          <div style="flex:1;height:1px;background:#e8ecf0"></div>
+          <span style="font-size:12px;color:#a0aec0">Or</span>
+          <div style="flex:1;height:1px;background:#e8ecf0"></div>
+        </div>
+        <div style="font-size:13px;font-weight:700;color:#1a202c;margin-bottom:12px">Need a template ?</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#f0fff4;border:1px solid #c6f6d5;border-radius:8px;padding:14px 16px;cursor:pointer">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#276749">Download Sample CSV</div>
+            <div style="font-size:11px;color:#4a5568;margin-top:2px">Use this sample to fill vehicle data</div>
+          </div>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38a169" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+        </div>
+      </div>
+
+      <!-- ── STATE 4: Error (validation failures) ── -->
+      <div id="upload-state-error" style="display:none">
+
+        <!-- File info + reupload row -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div style="font-size:11px;font-weight:600;color:#718096;text-transform:uppercase;letter-spacing:.04em">Import CSV</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="display:flex;align-items:center;gap:5px;background:#f7fafc;border:1px solid #e2e8f0;border-radius:6px;padding:5px 10px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#718096" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              <span id="error-filename" style="font-size:12px;color:#2d3748;font-weight:500">XYZname.csv . 342 KB</span>
+            </div>
+            <label style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;font-size:12px;font-weight:600;color:#276749;background:#fff;border:1.5px solid #38a169;border-radius:6px;cursor:pointer;font-family:inherit">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38a169" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Reupload
+              <input type="file" accept=".csv,.xlsx" style="display:none" onchange="handleFileSelect(this)"/>
+            </label>
+          </div>
+        </div>
+
+        <!-- Error banner -->
+        <div style="display:flex;align-items:flex-start;gap:10px;background:#fff5f5;border:1px solid #fed7d7;border-radius:8px;padding:12px 14px;margin-bottom:14px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e53e3e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#c53030">Failed To Import Data</div>
+            <div style="font-size:11px;color:#e53e3e;margin-top:2px">4 rows have errors &nbsp;•&nbsp; Fix and re-upload &nbsp;•&nbsp; Nothing was saved</div>
+          </div>
+        </div>
+
+        <!-- Filter tabs -->
+        <div id="error-filter-tabs" style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+          <button id="err-filter-all" class="err-filter-btn active" onclick="filterErrors('all',this)">All (4)</button>
+          <button class="err-filter-btn" onclick="filterErrors('shed',this)">Shed Address (3)</button>
+          <button class="err-filter-btn" onclick="filterErrors('email',this)">Email Format (1)</button>
+        </div>
+
+        <!-- Error rows -->
+        <div id="error-rows-list" style="border:1.5px solid #fed7d7;border-radius:8px;overflow:hidden;max-height:320px;overflow-y:auto">
+          <!-- rows injected by JS -->
+        </div>
+      </div>
+
+    </div><!-- /body -->
+
+    <!-- Footer buttons — changes per state -->
+    <div id="drawer-footer-normal" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px 24px;border-top:1px solid #f0f2f5">
+      <button onclick="closeUploadDrawer()" style="padding:11px;font-size:13px;font-weight:600;color:#276749;background:#fff;border:1.5px solid #d1d9e0;border-radius:8px;cursor:pointer;font-family:inherit;transition:background .1s" onmouseover="this.style.background='#f0fff4'" onmouseout="this.style.background='#fff'">Cancel</button>
+      <button id="upload-confirm-btn" onclick="confirmUpload()" style="padding:11px;font-size:13px;font-weight:700;color:#fff;background:#9ec8b0;border:none;border-radius:8px;cursor:not-allowed;font-family:inherit;transition:background .1s" disabled>Upload</button>
+    </div>
+    <div id="drawer-footer-error" style="display:none;grid-template-columns:1fr 1fr;gap:12px;padding:16px 24px;border-top:1px solid #f0f2f5">
+      <button onclick="closeUploadDrawer()" style="padding:11px;font-size:13px;font-weight:600;color:#4a5568;background:#fff;border:1.5px solid #d1d9e0;border-radius:8px;cursor:pointer;font-family:inherit;transition:background .1s" onmouseover="this.style.background='#f7fafc'" onmouseout="this.style.background='#fff'">Cancel</button>
+      <button onclick="downloadErrorReport()" style="padding:11px;font-size:13px;font-weight:700;color:#fff;background:#e53e3e;border:none;border-radius:8px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download Report
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SUCCESS TOAST ══ -->
+<div id="success-toast" style="display:none;position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:600;background:#1a202c;color:#fff;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:500;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.18)">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38a169" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+  File uploaded Successfully
+</div>
+
+<!-- ══ FAILURE TOAST ══ -->
+<div id="failure-toast" style="display:none;position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:600;background:#c53030;color:#fff;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:500;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.18)">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+  Nodal points Upload failed
+</div>
+
+<!-- ══ SPECIAL CASE CONFIRM MODAL ══ -->
+<div id="special-confirm-overlay" onclick="if(event.target===this)closeSpecialConfirm()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:550;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:12px;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden">
+    <div style="padding:22px 22px 18px">
+      <div style="font-size:13px;color:#2d3748;line-height:1.6">If you change the special case status, the current Effective Date and Valid Till Date will be overwritten with the new values.<br><br>Do you want to continue?</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 22px 22px">
+      <button onclick="closeSpecialConfirm()" style="padding:10px;font-size:13px;font-weight:600;color:#276749;background:#fff;border:1.5px solid #d1d9e0;border-radius:8px;cursor:pointer;font-family:inherit">Close</button>
+      <button onclick="confirmSpecialChange()" style="padding:10px;font-size:13px;font-weight:700;color:#fff;background:#38a169;border:none;border-radius:8px;cursor:pointer;font-family:inherit">Continue</button>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ── Driver listing cells ── */
+.driver-cell{display:flex;align-items:center;gap:10px}
+.driver-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0}
+.expiry-sub{display:flex;align-items:center;gap:5px;font-size:11px;margin-top:2px}
+.exp-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.exp-expired{color:#dd6b20}
+.exp-active{color:#38a169}
+.exp-soon{color:#d69e2e}
+.comp-pill{display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;font-size:11.5px;font-weight:500;border:1.5px solid}
+.comp-ok{background:#f0fff4;color:#276749;border-color:#9ae6b4}
+.comp-no{background:#fff5f5;color:#c53030;border-color:#fc8181}
+
+/* ── Phone prefix input ── */
+.phone-wrap{display:flex;align-items:stretch;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;background:#fff}
+.phone-wrap:focus-within{border-color:#68d391;box-shadow:0 0 0 2px rgba(104,211,145,.12)}
+.phone-prefix{display:flex;align-items:center;padding:0 10px;background:#f7fafc;border-right:1px solid #e2e8f0;font-size:12px;color:#4a5568;font-weight:500}
+.phone-wrap input{flex:1;border:none;padding:7px 10px;font-size:12px;color:#2d3748;outline:none;font-family:inherit}
+
+/* ── Shift group ── */
+.shift-group{border:1px solid #e8ecf0;border-radius:8px;padding:14px;margin-bottom:14px;background:#fafbfc}
+.shift-group-head{display:flex;align-items:flex-end;gap:10px;margin-bottom:12px}
+.shift-slot{display:flex;align-items:flex-end;gap:10px;margin-bottom:10px}
+.time-break{text-align:center;font-size:11px;color:#a0aec0;margin:6px 0;position:relative}
+.time-break::before,.time-break::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:#e2e8f0}
+.time-break::before{left:0}.time-break::after{right:0}
+.shift-del{width:30px;height:30px;border-radius:6px;border:1px solid #e2e8f0;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#a0aec0;flex-shrink:0}
+.shift-del:hover{color:#c53030;border-color:#fc8181;background:#fff5f5}
+.shift-x{width:28px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#a0aec0;flex-shrink:0;font-size:16px}
+.shift-x:hover{color:#c53030}
+.time-wrap{position:relative;flex:1}
+.time-wrap input{width:100%;padding:7px 30px 7px 10px;font-size:12px;border:1px solid #e2e8f0;border-radius:6px;color:#2d3748;outline:none;font-family:inherit}
+.time-wrap input:focus{border-color:#68d391}
+.time-icon{position:absolute;right:9px;top:50%;transform:translateY(-50%);pointer-events:none;width:13px;height:13px;stroke:#a0aec0;fill:none;stroke-width:1.8}
+.add-slot-btn{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:#38a169;background:none;border:none;cursor:pointer;font-family:inherit;padding:2px 0}
+.add-slot-btn:hover{color:#276749}
+
+/* ── Under Approval status badges ── */
+.approval-badge{display:inline-flex;align-items:center;padding:4px 12px;border-radius:6px;font-size:11.5px;font-weight:500;border:1px solid}
+.ap-pending{background:#fff9ed;color:#92400e;border-color:#f6c90e}
+.ap-sent{background:#eff8ff;color:#1e56a0;border-color:#93c5fd}
+.ap-rejected{background:#fafafa;color:#4a5568;border-color:#d1d9e0}
+.c-approval{background:#eff8ff;color:#1e56a0;border-color:#93c5fd}
+.c-rejected{background:#fff5f5;color:#c53030;border-color:#fc8181}
+.c-pending-approval{background:#fff9ed;color:#92400e;border-color:#f6c90e}
+.c-female{background:#fdf2f8;color:#9d3777;border-color:#f0a8d0}
+
+/* ── Employee Map View ── */
+.map-toggle{display:inline-flex;background:#fff;border:1px solid #cbd5e0;border-radius:20px;padding:2px;gap:2px}
+.map-toggle-btn{padding:5px 18px;border:none;background:none;border-radius:20px;font-size:12.5px;font-weight:600;color:#718096;cursor:pointer;font-family:inherit;transition:all .15s}
+.map-toggle-btn.active{background:#276749;color:#fff}
+.map-canvas{position:relative;width:100%;height:calc(100vh - 130px);min-height:560px;border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;background:#eef0e8}
+.map-search{position:absolute;top:16px;left:16px;z-index:10;display:flex;align-items:center;gap:8px;background:#fff;border-radius:8px;padding:9px 12px;width:340px;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.map-search svg{width:15px;height:15px;stroke:#a0aec0;fill:none;stroke-width:2;stroke-linecap:round;flex-shrink:0}
+.map-search input{border:none;outline:none;font-size:13px;font-family:inherit;flex:1;color:#2d3748}
+.map-selected-pill{position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:10;background:#fff;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;color:#2d3748;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.map-traffic-btn{position:absolute;top:16px;right:16px;z-index:10;width:38px;height:38px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.map-traffic-btn svg{width:18px;height:18px}
+.map-cluster:hover circle{stroke-width:5;filter:drop-shadow(0 2px 6px rgba(49,130,206,.4))}
+.map-marker:hover{filter:drop-shadow(0 3px 6px rgba(0,0,0,.3))}
+.map-tooltip{position:absolute;z-index:20;display:flex;align-items:center;gap:10px;background:#fff;border-radius:8px;padding:8px 12px;box-shadow:0 4px 16px rgba(0,0,0,.18);pointer-events:none;white-space:nowrap}
+.mt-icon{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.mt-name{font-size:12.5px;font-weight:700;color:#1a202c}
+.mt-id{font-size:10.5px;color:#a0aec0}
+.map-cluster-tooltip{position:absolute;z-index:20;background:#fff;border-radius:10px;padding:14px 16px;box-shadow:0 4px 20px rgba(0,0,0,.2);pointer-events:none;min-width:240px}
+.mct-head{font-size:12px;font-weight:700;color:#1a202c;margin-bottom:10px}
+.mct-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px}
+.mct-name{font-size:12px;font-weight:600}
+.mct-id{font-size:10px;color:#a0aec0}
+.map-layers{position:absolute;bottom:16px;right:16px;z-index:10;background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 2px 12px rgba(0,0,0,.15);width:200px}
+.map-layer-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#2d3748;padding:5px 0;cursor:pointer}
+.map-switch{width:34px;height:18px;border-radius:20px;background:#cbd5e0;position:relative;transition:background .15s;flex-shrink:0}
+.map-switch.on{background:#38a169}
+.map-knob{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.map-switch.on .map-knob{left:18px}
+.map-zoom{position:absolute;bottom:16px;right:230px;z-index:10;display:flex;flex-direction:column;gap:6px}
+.map-zoom button{width:38px;height:38px;background:#fff;border:none;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.map-zoom button svg{width:18px;height:18px}
+.map-zoom button:hover{background:#f7fafc}
+.badge{ cursor: pointer; }
+#drop-zone:hover{ border-color:#38a169; background:#f0fff4; }
+
+/* ── Error filter buttons ── */
+.err-filter-btn{padding:4px 12px;font-size:11.5px;font-weight:600;border-radius:20px;border:1.5px solid #e2e8f0;background:#fff;color:#718096;cursor:pointer;font-family:inherit;transition:all .1s}
+.err-filter-btn.active{background:#fff5f5;color:#c53030;border-color:#fc8181}
+.err-filter-btn:hover:not(.active){background:#f7fafc;border-color:#cbd5e0}
+
+/* ── Error row ── */
+.err-row{display:flex;align-items:flex-start;gap:0;border-bottom:1px solid #fed7d7;background:#fff}
+.err-row:last-child{border-bottom:none}
+.err-row-tag{background:#fff5f5;border-right:1px solid #fed7d7;padding:12px 14px;font-size:11px;font-weight:700;color:#c53030;white-space:nowrap;min-width:68px;flex-shrink:0}
+.err-row-body{padding:10px 14px;flex:1}
+.err-row-title{font-size:12.5px;font-weight:600;color:#1a202c}
+.err-row-desc{font-size:11px;color:#718096;margin-top:2px}
+</style>
+<script>
+/* ═══════════════════════════════════════
+   MODULE SWITCHING (Vehicle <-> Driver)
+═══════════════════════════════════════ */
+function showModule(mod){
+  const mods = ['vehicle','driver','employee'];
+  document.getElementById('module-vehicle').style.display  = mod==='vehicle'  ? 'block' : 'none';
+  document.getElementById('module-driver').style.display   = mod==='driver'   ? 'block' : 'none';
+  document.getElementById('module-employee').style.display = mod==='employee' ? 'block' : 'none';
+  document.getElementById('nav-vehicle').className  = 'nav-item' + (mod==='vehicle'  ? ' active' : '');
+  document.getElementById('nav-driver').className   = 'nav-item' + (mod==='driver'   ? ' active' : '');
+  document.getElementById('nav-employee').className = 'nav-item' + (mod==='employee' ? ' active' : '');
+  const titles = {vehicle:'Vehicle', driver:'Driver', employee:'Employee'};
+  document.getElementById('sb-module-title').textContent = titles[mod];
+  document.getElementById('sb-module-crumb').textContent = titles[mod];
+  document.getElementById('topbar-label').textContent = 'Driver Masters Setting landing page';
+  if(mod==='vehicle'){ showListing(); }
+  else if(mod==='driver'){ showDriverListing(); }
+  else { showEmployeeListing(); }
+  document.querySelector('.main').scrollTop = 0;
+}
+
+/* ═══════════════════════════════════════
+   DRIVER MODULE
+═══════════════════════════════════════ */
+const drivers = [
+  {id:1, fname:'Sakshi', lname:'Shania', mobile:'8178939937', licence:'TN1320140004846', status:'inactive',    vendor:'Ravi Kumar'},
+  {id:2, fname:'Sakshi', lname:'Shania', mobile:'8178939937', licence:'TN1320140004846', status:'active',      vendor:'Sona Travel'},
+  {id:3, fname:'Sakshi', lname:'Shania', mobile:'8178939937', licence:'TN1320140004846', status:'blacklisted', vendor:'Ravi Sharma'},
+  {id:4, fname:'Sakshi', lname:'Shania', mobile:'8178939937', licence:'TN1320140004846', status:'temporarily', vendor:'Ravi Sharma'},
+  {id:5, fname:'Ramesh', lname:'Kumar',  mobile:'9845012233', licence:'KA0520180012394', status:'active',      vendor:'City Cabs'},
+];
+let driverMode = 'create';
+let currentDriverId = null;
+
+function switchDriverTab(tab){
+  const isDrivers = tab === 'drivers';
+  document.getElementById('driver-tab-drivers').style.display  = isDrivers ? 'block' : 'none';
+  document.getElementById('driver-tab-approval').style.display = isDrivers ? 'none'  : 'block';
+  document.getElementById('dtab-drivers-btn').className  = 'tab' + (isDrivers ? ' active' : '');
+  document.getElementById('dtab-approval-btn').className = 'tab' + (isDrivers ? '' : ' active');
+}
+
+function showDriverForm(){
+  driverMode = 'create';
+  currentDriverId = null;
+  resetDriverForm();
+  document.getElementById('driver-form-back-label').textContent = 'Create new driver';
+  document.getElementById('driver-listing').style.display = 'none';
+  document.getElementById('driver-form').style.display = 'block';
+  document.getElementById('topbar-label').textContent = 'Create Driver';
+  switchDriverFormTab(document.querySelector('#driver-form .form-tab'), 'dtab-details');
+  document.querySelector('.main').scrollTop = 0;
+}
+
+function showDriverEditForm(id){
+  driverMode = 'edit';
+  currentDriverId = id;
+  const d = drivers.find(x=>x.id===id);
+  if(d) populateDriverForm(d);
+  document.getElementById('driver-form-back-label').textContent = 'Edit driver';
+  document.getElementById('driver-listing').style.display = 'none';
+  document.getElementById('driver-form').style.display = 'block';
+  document.getElementById('topbar-label').textContent = 'Edit';
+  switchDriverFormTab(document.querySelector('#driver-form .form-tab'), 'dtab-details');
+  document.querySelector('.main').scrollTop = 0;
+}
+
+function showDriverListing(){
+  document.getElementById('driver-listing').style.display = 'block';
+  document.getElementById('driver-form').style.display = 'none';
+  document.getElementById('topbar-label').textContent = 'Driver Masters Setting landing page';
+}
+
+function switchDriverFormTab(el, tabId){
+  document.querySelectorAll('#driver-form .form-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['dtab-details','dtab-compliance'].forEach(id=>{
+    document.getElementById(id).style.display = id===tabId ? 'block' : 'none';
+  });
+}
+
+function populateDriverForm(d){
+  const set=(id,v)=>{const e=document.getElementById(id); if(e) e.value=v;};
+  set('d-fname', d.fname); set('d-lname', d.lname); set('d-mobile', d.mobile); set('d-licence', d.licence);
+  const ss = document.getElementById('d-status');
+  if(ss){ for(let i=0;i<ss.options.length;i++){ if(ss.options[i].value===d.status){ ss.selectedIndex=i; break; } } }
+}
+
+function resetDriverForm(){
+  ['d-fname','d-mname','d-lname','d-mobile','d-emergency','d-licence'].forEach(id=>{const e=document.getElementById(id); if(e) e.value='';});
+}
+
+function handleDriverFormStatus(sel){
+  const tag = document.getElementById('d-status-tag');
+  const val = sel.value;
+  if(val==='temporarily' || val==='blacklisted'){
+    tag.style.display='inline-flex';
+  } else {
+    tag.style.display = val ? 'none' : 'none';
+  }
+}
+
+function saveDriver(){
+  const fn = document.getElementById('d-fname');
+  if(fn && !fn.value.trim()){ fn.style.borderColor='#e53e3e'; fn.focus(); return; }
+  alert(driverMode==='edit' ? 'Driver updated successfully!' : 'Driver created successfully!');
+  showDriverListing();
+}
+
+/* ── Driver status modal (reuse vehicle modal) ── */
+function openDriverStatusModal(id){
+  // reuse the same vehicle status modal markup
+  modalTargetVehicleId = 'driver-' + id;
+  const d = drivers.find(x=>x.id===id);
+  const sel = document.getElementById('modal-status-sel');
+  sel.value = d ? d.status : 'active';
+  document.getElementById('modal-valid-date').value = '';
+  document.getElementById('modal-remark').value = '';
+  handleModalStatusChange(sel);
+  document.getElementById('status-modal-overlay').style.display = 'flex';
+}
+
+/* ── Shift groups ── */
+let shiftGroups = [];
+let nextShiftId = 1;
+const defaultShift = () => ({
+  id: nextShiftId++,
+  days: 'Mon, Tue, Thu',
+  slots: [{from:'09:00 AM', to:'12:00 PM'}, {from:'01:00 PM', to:'05:00 PM'}]
+});
+
+function renderShiftGroups(){
+  const wrap = document.getElementById('shift-groups');
+  wrap.innerHTML = shiftGroups.map(g => `
+    <div class="shift-group" data-sid="${g.id}">
+      <div class="shift-group-head">
+        <div class="field" style="flex:1">
+          <label>Select Days <span class="req">*</span></label>
+          <div class="sel-wrap">
+            <select><option ${g.days==='Mon, Tue, Thu'?'selected':''}>Mon, Tue, Thu</option><option ${g.days==='Sat, Sun'?'selected':''}>Sat, Sun</option><option>Mon - Fri</option><option>All Days</option></select>
+            <svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+        <div class="shift-del" onclick="deleteShiftGroup(${g.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></div>
+      </div>
+      ${g.slots.map((s,i)=>`
+        ${i===1 ? '<div class="time-break">One Hour Break</div>' : ''}
+        <div class="shift-slot">
+          <div class="field" style="flex:1"><label>From</label><div class="time-wrap"><input type="text" value="${s.from}"/><svg class="time-icon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div>
+          <div class="field" style="flex:1"><label>To</label><div class="time-wrap"><input type="text" value="${s.to}"/><svg class="time-icon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div>
+          <div class="shift-x" onclick="deleteShiftSlot(${g.id},${i})">&times;</div>
+        </div>
+      `).join('')}
+      <button class="add-slot-btn" onclick="addShiftSlot(${g.id})"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#38a169" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Time Slot</button>
+    </div>
+  `).join('');
+}
+function addShiftGroup(){ shiftGroups.push(defaultShift()); renderShiftGroups(); }
+function deleteShiftGroup(id){ shiftGroups = shiftGroups.filter(g=>g.id!==id); renderShiftGroups(); }
+function addShiftSlot(gid){ const g=shiftGroups.find(g=>g.id===gid); if(g){ g.slots.push({from:'09:00 AM',to:'12:00 PM'}); renderShiftGroups(); } }
+function deleteShiftSlot(gid,i){ const g=shiftGroups.find(g=>g.id===gid); if(g){ g.slots.splice(i,1); renderShiftGroups(); } }
+
+/* ── Driver compliance docs (reuse pattern) ── */
+const driverDocs = ['Driving Licence','Police Verification','Aadhar Card','Medical Certificate','Training Certificate'];
+let driverDocRows = driverDocs.map((name,i)=>({id:i+1, name, expiry:'', fileName:''}));
+let nextDriverDocId = driverDocs.length + 1;
+
+function renderDriverComp(){
+  const tbody = document.getElementById('driver-comp-tbody');
+  tbody.innerHTML = driverDocRows.map(row=>`
+    <tr>
+      <td>${row.id<=driverDocs.length?`<span class="doc-name">${row.name}</span>`:`<input type="text" class="expiry-input" style="width:160px" placeholder="Document name" value="${row.name}" oninput="updateDriverDoc(${row.id},'name',this.value)"/>`}</td>
+      <td><input type="text" class="expiry-input" placeholder="dd-mm-yyyy" value="${row.expiry}" oninput="updateDriverDoc(${row.id},'expiry',this.value)" onfocus="this.placeholder=''" onblur="this.placeholder='dd-mm-yyyy'"/></td>
+      <td>${row.fileName?`<span class="file-name-text">${row.fileName}</span>`:`<label class="file-upload-btn"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload file<input type="file" style="display:none" onchange="handleDriverDocFile(${row.id},this)"/></label>`}</td>
+      <td><span class="doc-status-badge ${row.fileName?'ds-uploaded':'ds-pending'}">${row.fileName?'Uploaded':'Pending'}</span></td>
+      <td><div class="doc-actions">
+        <div class="doc-act"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+        <div class="doc-act"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <div class="doc-act"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+        <div class="doc-act danger" onclick="deleteDriverDoc(${row.id})"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></div>
+      </div></td>
+      <td></td>
+    </tr>`).join('');
+}
+function updateDriverDoc(id,f,v){const r=driverDocRows.find(r=>r.id===id);if(r)r[f]=v;}
+function handleDriverDocFile(id,inp){const r=driverDocRows.find(r=>r.id===id);if(r&&inp.files[0]){r.fileName=inp.files[0].name;renderDriverComp();}}
+function deleteDriverDoc(id){driverDocRows=driverDocRows.filter(r=>r.id!==id);renderDriverComp();}
+function addDriverDocRow(){driverDocRows.push({id:nextDriverDocId++,name:'',expiry:'',fileName:''});renderDriverComp();}
+
+// init driver module
+shiftGroups = [defaultShift(), {id:nextShiftId++, days:'Sat, Sun', slots:[{from:'09:00 AM',to:'12:00 PM'}]}];
+renderShiftGroups();
+renderDriverComp();
+
+/* ═══════════════════════════════════════
+   EMPLOYEE MODULE
+═══════════════════════════════════════ */
+const employees = [
+  {id:1, name:'Sakshi Shania', empid:'SET07849848', status:'inactive', mobile:'8178939937', gender:'Female', transport:'Yes'},
+  {id:2, name:'Sakshi Shania', empid:'SET07849848', status:'active',   mobile:'8178939937', gender:'Female', transport:'Yes'},
+  {id:3, name:'Sakshi Shania', empid:'SET07849848', status:'active',   mobile:'8178939937', gender:'Female', transport:'Yes'},
+  {id:4, name:'Sakshi Shania', empid:'SET07849848', status:'active',   mobile:'8178939937', gender:'Female', transport:'Yes'},
+  {id:5, name:'Sakshi Shania', empid:'SET07849848', status:'active',   mobile:'8178939937', gender:'Female', transport:'Yes'},
+  {id:6, name:'Sakshi Shania', empid:'SET07849848', status:'active',   mobile:'8178939937', gender:'Female', transport:'Yes'},
+  {id:7, name:'Sakshi Shania', empid:'SET07849848', status:'active',   mobile:'8178939937', gender:'Female', transport:'Yes'},
+];
+let employeeMode = 'create';
+let currentEmployeeId = null;
+
+const empStatusCfg = {
+  active:      {label:'Active',      badgeCls:'b-active'},
+  inactive:    {label:'Inactive',    badgeCls:'b-inactive'},
+  temporarily: {label:'Temporarily', badgeCls:'b-temp'},
+};
+
+function editIcons(id){
+  return `<div class="actions">
+    <div class="act-btn" onclick="showEmployeeEditForm(${id})"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+    <div class="act-btn"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+    <div class="act-btn"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg></div>
+  </div>`;
+}
+
+function renderEmployeeTable(){
+  const tbody = document.getElementById('employee-tbody');
+  tbody.innerHTML = employees.map(e=>{
+    const cfg = empStatusCfg[e.status] || empStatusCfg.active;
+    return `<tr data-eid="${e.id}">
+      <td><div class="vn" style="font-weight:500">${e.name}</div></td>
+      <td>${e.empid}</td>
+      <td><span class="badge ${cfg.badgeCls}" onclick="openEmpStatusModal(${e.id})">${cfg.label} <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></td>
+      <td>+91- ${e.mobile}</td>
+      <td>${e.gender}</td>
+      <td class="t-yes">${e.transport}</td>
+      <td>${editIcons(e.id)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function switchEmployeeTabInit(){ renderEmployeeTable(); }
+
+function showEmployeeForm(){
+  employeeMode = 'create';
+  currentEmployeeId = null;
+  resetEmployeeForm();
+  document.getElementById('employee-form-back-label').textContent = 'Create New Employee';
+  document.getElementById('employee-listing').style.display = 'none';
+  document.getElementById('employee-form').style.display = 'block';
+  document.getElementById('topbar-label').textContent = 'Create Employee';
+  document.querySelector('.main').scrollTop = 0;
+}
+
+function showEmployeeEditForm(id){
+  employeeMode = 'edit';
+  currentEmployeeId = id;
+  const e = employees.find(x=>x.id===id);
+  if(e){
+    const set=(fid,v)=>{const el=document.getElementById(fid); if(el) el.value=v;};
+    const parts = e.name.split(' ');
+    set('e-fname', parts[0]||''); set('e-lname', parts[1]||'');
+    set('e-empid', e.empid); set('e-mobile', e.mobile);
+    const g=document.getElementById('e-gender'); if(g){g.value=e.gender; g.classList.remove('placeholder');}
+  }
+  document.getElementById('employee-form-back-label').textContent = 'Edit Employee';
+  document.getElementById('employee-listing').style.display = 'none';
+  document.getElementById('employee-form').style.display = 'block';
+  document.getElementById('topbar-label').textContent = 'Edit';
+  document.querySelector('.main').scrollTop = 0;
+}
+
+function showEmployeeListing(){
+  document.getElementById('employee-listing').style.display = 'block';
+  document.getElementById('employee-form').style.display = 'none';
+  const map = document.getElementById('employee-map');
+  if(map) map.style.display = 'none';
+  document.getElementById('topbar-label').textContent = 'Driver Masters Setting landing page';
+}
+
+function resetEmployeeForm(){
+  ['e-fname','e-mname','e-lname','e-empid','e-email','e-mobile'].forEach(id=>{const el=document.getElementById(id); if(el) el.value='';});
+  const g=document.getElementById('e-gender'); if(g){ g.selectedIndex=0; g.classList.add('placeholder'); }
+}
+
+/* ── Transport opted conditional ── */
+function handleTransportOpted(sel){
+  document.getElementById('transport-details').style.display = sel.value==='yes' ? 'block' : 'none';
+}
+
+/* ── Special Case conditional (image 2 logic) ── */
+let specialCasePrevValue = 'no';
+let specialCasePendingValue = null;
+
+function handleSpecialCase(sel){
+  const newVal = sel.value;
+  // If switching and there are existing dates set, confirm overwrite
+  const effSet   = document.getElementById('e-eff-date').value;
+  const validSet = document.getElementById('e-valid-date').value;
+  const hadData  = (specialCasePrevValue !== newVal) && (effSet || validSet) && document.getElementById('special-eff-date').style.display !== 'none';
+
+  if(hadData){
+    // Show confirm modal; revert select until confirmed
+    specialCasePendingValue = newVal;
+    sel.value = specialCasePrevValue;
+    document.getElementById('special-confirm-overlay').style.display = 'flex';
+    return;
+  }
+  applySpecialCase(newVal);
+}
+
+function applySpecialCase(val){
+  specialCasePrevValue = val;
+  const effWrap   = document.getElementById('special-eff-date');
+  const validWrap = document.getElementById('special-valid-date');
+  const tag       = document.getElementById('special-case-tag');
+
+  if(val === 'yes'){
+    effWrap.style.display   = 'block';
+    validWrap.style.display = 'block';
+    tag.style.display = 'none';
+  } else {
+    // No → hide date fields, show summary tag of last values
+    effWrap.style.display   = 'none';
+    validWrap.style.display = 'none';
+    const eff   = document.getElementById('e-eff-date').value;
+    const valid = document.getElementById('e-valid-date').value;
+    if(eff){
+      const tillPart = valid ? ' To Valid Till '+valid : '';
+      tag.innerHTML = `New Status "Yes" | Effective From ${eff}${tillPart}
+        <span class="xtag" style="background:#38a169" onclick="this.parentElement.style.display='none'">
+          <svg viewBox="0 0 24 24" width="8" height="8" stroke="#fff" fill="none" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>`;
+      tag.style.display = 'inline-flex';
+    } else {
+      tag.style.display = 'none';
+    }
+  }
+}
+
+function closeSpecialConfirm(){
+  document.getElementById('special-confirm-overlay').style.display = 'none';
+  specialCasePendingValue = null;
+}
+
+function confirmSpecialChange(){
+  document.getElementById('special-confirm-overlay').style.display = 'none';
+  if(specialCasePendingValue !== null){
+    document.getElementById('e-special-case').value = specialCasePendingValue;
+    applySpecialCase(specialCasePendingValue);
+    specialCasePendingValue = null;
+  }
+}
+
+/* ── Employee status modal (reuse vehicle modal) ── */
+function openEmpStatusModal(id){
+  modalTargetVehicleId = 'employee-' + id;
+  const e = employees.find(x=>x.id===id);
+  const sel = document.getElementById('modal-status-sel');
+  sel.value = e ? e.status : 'active';
+  document.getElementById('modal-valid-date').value = '';
+  document.getElementById('modal-remark').value = '';
+  handleModalStatusChange(sel);
+  document.getElementById('status-modal-overlay').style.display = 'flex';
+}
+
+function saveEmployee(){
+  const fn = document.getElementById('e-fname');
+  if(fn && !fn.value.trim()){ fn.style.borderColor='#e53e3e'; fn.focus(); return; }
+  alert(employeeMode==='edit' ? 'Employee updated successfully!' : 'Employee created successfully!');
+  showEmployeeListing();
+}
+
+// init employee module
+renderEmployeeTable();
+
+/* ═══════════════════════════════════════
+   EMPLOYEE MAP VIEW
+═══════════════════════════════════════ */
+let mapZoomLevel = 2;
+
+function showEmployeeMap(){
+  document.getElementById('employee-listing').style.display = 'none';
+  document.getElementById('employee-form').style.display = 'none';
+  document.getElementById('employee-map').style.display = 'block';
+  document.getElementById('topbar-label').textContent = 'Employees on Map';
+  document.querySelector('.main').scrollTop = 0;
+}
+
+function setMapMode(mode){
+  const isHome = mode === 'home';
+  document.getElementById('map-home-btn').className  = 'map-toggle-btn' + (isHome ? ' active' : '');
+  document.getElementById('map-nodal-btn').className = 'map-toggle-btn' + (isHome ? '' : ' active');
+}
+
+function getCanvasPoint(evt){
+  const canvas = document.getElementById('map-canvas');
+  const rect = canvas.getBoundingClientRect();
+  return { x: evt.clientX - rect.left, y: evt.clientY - rect.top, w: rect.width, h: rect.height };
+}
+
+function showMarkerTooltip(evt, name, id, gender){
+  const tip = document.getElementById('map-marker-tooltip');
+  const icon = document.getElementById('mt-icon');
+  document.getElementById('mt-name').textContent = name;
+  document.getElementById('mt-id').textContent = id;
+  icon.textContent = gender;
+  icon.style.background = gender === 'M' ? '#3182ce' : '#c5377f';
+  const p = getCanvasPoint(evt);
+  tip.style.display = 'flex';
+  tip.style.left = Math.min(p.x + 14, p.w - 200) + 'px';
+  tip.style.top  = (p.y - 10) + 'px';
+}
+function hideMarkerTooltip(){ document.getElementById('map-marker-tooltip').style.display = 'none'; }
+
+function showClusterTooltip(evt){
+  const tip = document.getElementById('map-cluster-tooltip');
+  const p = getCanvasPoint(evt);
+  tip.style.display = 'block';
+  tip.style.left = Math.min(p.x + 20, p.w - 260) + 'px';
+  tip.style.top  = Math.min(p.y - 10, p.h - 200) + 'px';
+}
+function hideClusterTooltip(){ document.getElementById('map-cluster-tooltip').style.display = 'none'; }
+
+function toggleSwitch(el){ el.classList.toggle('on'); }
+
+function mapZoom(dir){
+  mapZoomLevel = Math.max(1, Math.min(5, mapZoomLevel + dir));
+  const svg = document.getElementById('map-svg');
+  const scale = 1 + (mapZoomLevel - 2) * 0.12;
+  svg.style.transform = `scale(${scale})`;
+  svg.style.transformOrigin = 'center center';
+  svg.style.transition = 'transform .25s';
+}
+</script>
+
+<script>
+/* ═══════════════════════════════════════
+   UPLOAD DRAWER
+═══════════════════════════════════════ */
+let uploadInterval = null;
+let currentProgress = 0;
+let simulateOutcome = 'error'; // 'error' | 'success'
+
+function setOutcome(outcome){
+  simulateOutcome = outcome;
+  document.getElementById('toggle-error-btn').style.background   = outcome==='error'   ? '#e53e3e' : '#fff';
+  document.getElementById('toggle-error-btn').style.color        = outcome==='error'   ? '#fff'    : '#a0aec0';
+  document.getElementById('toggle-success-btn').style.background = outcome==='success' ? '#38a169' : '#fff';
+  document.getElementById('toggle-success-btn').style.color      = outcome==='success' ? '#fff'    : '#a0aec0';
+}
+
+const mockErrors = [
+  {row:'Row 24', type:'shed',  title:'Shed Address', desc:'At least one shed location is required'},
+  {row:'Row 24', type:'shed',  title:'Shed Address', desc:'At least one shed location is required'},
+  {row:'Row 24', type:'shed',  title:'Shed Address', desc:'At least one shed location is required'},
+  {row:'Row 24', type:'email', title:'Email',         desc:'At least one shed location is required'},
+];
+let visibleErrors = [...mockErrors];
+
+function openUploadDrawer(){
+  simulateOutcome = 'error';
+  setOutcome('error');
+  setUploadState('idle');
+  document.getElementById('upload-file-input').value = '';
+  document.getElementById('reupload-input').value    = '';
+  document.getElementById('upload-overlay').style.display = 'block';
+}
+
+function closeUploadDrawer(){
+  cancelUpload();
+  document.getElementById('upload-overlay').style.display = 'none';
+}
+
+function handleOverlayClick(e){
+  if(e.target === document.getElementById('upload-overlay')) closeUploadDrawer();
+}
+
+function setUploadState(state){
+  ['idle','progress','ready','error'].forEach(s=>{
+    const el = document.getElementById('upload-state-'+s);
+    if(el) el.style.display = s===state ? 'block' : 'none';
+  });
+  const isError = state==='error';
+  const isReady = state==='ready';
+  document.getElementById('drawer-footer-normal').style.display = isError ? 'none' : 'grid';
+  document.getElementById('drawer-footer-error').style.display  = isError ? 'grid' : 'none';
+  // Only update confirm button when it's visible (not in error state)
+  if(!isError){
+    const btn = document.getElementById('upload-confirm-btn');
+    if(btn){
+      btn.disabled         = !isReady;
+      btn.style.background = isReady ? '#38a169' : '#9ec8b0';
+      btn.style.cursor     = isReady ? 'pointer'  : 'not-allowed';
+    }
+  }
+}
+
+function handleFileSelect(input){
+  if(!input.files || !input.files[0]) return;
+  const file  = input.files[0];
+  const name  = file.name;
+  const sizeKB = Math.round(file.size/1024) || 342;
+
+  document.getElementById('upload-filename').textContent = name;
+  document.getElementById('upload-progress-bar').style.width = '0%';
+  document.getElementById('upload-progress-pct').textContent = '0%';
+  setUploadState('progress');
+
+  currentProgress = 0;
+  uploadInterval = setInterval(()=>{
+    currentProgress += Math.random()*18 + 4;
+    if(currentProgress >= 100){
+      currentProgress = 100;
+      clearInterval(uploadInterval); uploadInterval = null;
+      document.getElementById('ready-filename').textContent  = name;
+      document.getElementById('ready-filesize').textContent  = 'Files size '+sizeKB+'KB';
+      document.getElementById('error-filename').textContent  = name+' . '+sizeKB+' KB';
+      setTimeout(()=> setUploadState('ready'), 300);
+    }
+    document.getElementById('upload-progress-bar').style.width  = currentProgress+'%';
+    document.getElementById('upload-progress-pct').textContent  = Math.floor(currentProgress)+'%';
+  }, 120);
+}
+
+function cancelUpload(){
+  if(uploadInterval){ clearInterval(uploadInterval); uploadInterval = null; }
+  currentProgress = 0;
+  // Only reset to idle if we're not already closed
+  const overlay = document.getElementById('upload-overlay');
+  if(overlay && overlay.style.display !== 'none'){
+    setUploadState('idle');
+  }
+}
+
+function confirmUpload(){
+  if(simulateOutcome === 'error'){
+    // 1. Render rows first
+    renderErrorRows(mockErrors);
+    // 2. Show the error state (makes the div visible)
+    setUploadState('error');
+    // 3. Now reset filter tabs and apply 'all' filter
+    document.querySelectorAll('.err-filter-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('err-filter-all').classList.add('active');
+    document.querySelectorAll('#error-rows-list .err-row').forEach(r => r.style.display = 'flex');
+    // 4. Show failure toast behind the drawer
+    showFailureToast();
+  } else {
+    closeUploadDrawer();
+    showSuccessToast();
+  }
+}
+
+/* ── Error rows ── */
+function renderErrorRows(errors){
+  const list = document.getElementById('error-rows-list');
+  list.innerHTML = errors.map(e=>`
+    <div class="err-row" data-type="${e.type}">
+      <div class="err-row-tag">${e.row}</div>
+      <div class="err-row-body">
+        <div class="err-row-title">${e.title}</div>
+        <div class="err-row-desc">${e.desc}</div>
+      </div>
+    </div>`).join('');
+}
+
+function filterErrors(type, btn){
+  document.querySelectorAll('.err-filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const rows = document.querySelectorAll('#error-rows-list .err-row');
+  rows.forEach(r=>{
+    r.style.display = (type==='all' || r.dataset.type===type) ? 'flex' : 'none';
+  });
+}
+
+function downloadErrorReport(){ alert('Error report downloaded.'); }
+
+/* ── Toasts ── */
+function showToast(id, duration){
+  const toast = document.getElementById(id);
+  toast.style.display = 'flex';
+  toast.style.opacity = '0';
+  toast.style.transition = 'opacity .3s';
+  setTimeout(()=>{ toast.style.opacity='1'; }, 20);
+  setTimeout(()=>{
+    toast.style.opacity='0';
+    setTimeout(()=>{ toast.style.display='none'; }, 350);
+  }, duration);
+}
+function showSuccessToast(){ showToast('success-toast', 3200); }
+function showFailureToast(){ showToast('failure-toast', 3200); }
+</script>
+</body>
+</html>
