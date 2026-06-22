@@ -683,9 +683,9 @@ tr:hover td{background:#fafbfc}
               <div class="sel-wrap">
                 <select class="placeholder" onchange="this.classList.remove('placeholder')">
                   <option value="" disabled selected>Select</option>
-                  <option>New</option>
-                  <option>Transfer</option>
-                  <option>Replacement</option>
+                  <option>Dedicated</option>
+                  <option>Non-Inducted</option>
+                  <option>Temporary</option>
                 </select>
                 <svg class="sel-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
               </div>
@@ -775,7 +775,13 @@ tr:hover td{background:#fafbfc}
           <div class="form-grid form-grid-2">
             <div class="field">
               <label>Billing Profile</label>
-              <input type="text" id="f-billing-profile" value="bill-1"/>
+              <div class="search-select" id="billing-select">
+                <div class="ss-control" onclick="toggleBillingDropdown(event)">
+                  <input type="text" id="f-billing-profile" placeholder="Search billing profile" value="bill-1" autocomplete="off" oninput="filterBillingOptions(this.value)" onfocus="openBillingDropdown()"/>
+                  <svg class="ss-arrow" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+                <div class="ss-menu" id="billing-menu" style="display:none"></div>
+              </div>
             </div>
             <div class="field">
               <label>Billing Effective Date</label>
@@ -1156,13 +1162,12 @@ tr:hover td{background:#fafbfc}
             </div>
           </div>
           <div class="form-grid form-grid-3">
-            <div class="field"><label>Approver Id</label><input type="text" placeholder="Enter"/></div>
             <div class="field"><label>Date of Joining</label><div class="date-wrap"><input type="text" value="22-10-2024"/><svg class="date-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div>
             <div class="field"><label>Induction Date</label><div class="date-wrap"><input type="text" value="22-10-2024"/><svg class="date-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div>
+            <!-- Inactive Date — only shown for inactive drivers, pre-filled -->
+            <div class="field" id="d-inactive-date-field" style="display:none"><label>Inactive Date</label><div class="date-wrap"><input type="text" id="d-inactive-date" value=""/><svg class="date-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div>
           </div>
           <div class="form-grid form-grid-3">
-            <div class="field"><label>Date of Leaving</label><div class="date-wrap"><input type="text" value="22-10-2025"/><svg class="date-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div>
-            <div class="field"><label>Last Modified</label><div class="date-wrap"><input type="text" value="22-10-2025"/><svg class="date-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div>
             <div class="field"><label>Created On</label><div class="date-wrap"><input type="text" value="22-10-2025"/><svg class="date-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div>
           </div>
 
@@ -1748,6 +1753,51 @@ function handleTrackingMode(sel){
 }
 
 /* ═══════════════════════════════════════
+   BILLING PROFILE — search & select
+═══════════════════════════════════════ */
+const billingProfiles = ['bill-1','bill-2','bill-3','bill-4','Corporate Standard','Premium Fleet','Adhoc Hourly','Monthly Contract','Zone A Billing','Zone B Billing'];
+
+function renderBillingOptions(filter){
+  const menu = document.getElementById('billing-menu');
+  const current = document.getElementById('f-billing-profile').value.trim().toLowerCase();
+  const f = (filter||'').trim().toLowerCase();
+  const matches = billingProfiles.filter(p => p.toLowerCase().includes(f));
+  if(matches.length === 0){
+    menu.innerHTML = '<div class="ss-empty">No matching profile</div>';
+    return;
+  }
+  menu.innerHTML = matches.map(p =>
+    `<div class="ss-option ${p.toLowerCase()===current?'selected':''}" onmousedown="selectBilling('${p.replace(/'/g,"\\'")}')">${p}</div>`
+  ).join('');
+}
+
+function openBillingDropdown(){
+  renderBillingOptions(document.getElementById('f-billing-profile').value);
+  document.getElementById('billing-menu').style.display = 'block';
+}
+function toggleBillingDropdown(e){
+  const menu = document.getElementById('billing-menu');
+  if(menu.style.display === 'block'){ /* keep open while typing */ }
+  else { openBillingDropdown(); }
+}
+function filterBillingOptions(val){
+  renderBillingOptions(val);
+  document.getElementById('billing-menu').style.display = 'block';
+}
+function selectBilling(val){
+  document.getElementById('f-billing-profile').value = val;
+  document.getElementById('billing-menu').style.display = 'none';
+}
+// close dropdown on outside click
+document.addEventListener('click', function(e){
+  const sel = document.getElementById('billing-select');
+  if(sel && !sel.contains(e.target)){
+    const menu = document.getElementById('billing-menu');
+    if(menu) menu.style.display = 'none';
+  }
+});
+
+/* ═══════════════════════════════════════
    STATUS MODAL — triggered from TABLE rows
 ═══════════════════════════════════════ */
 const statusConfig = {
@@ -2176,6 +2226,18 @@ updateStatusBadgeUI('temporarily');
 .c-pending-approval{background:#fff9ed;color:#92400e;border-color:#f6c90e}
 .c-female{background:#fdf2f8;color:#9d3777;border-color:#f0a8d0}
 
+/* ── Search & select combobox ── */
+.search-select{position:relative}
+.ss-control{position:relative;display:flex;align-items:center}
+.ss-control input{width:100%;padding:7px 30px 7px 10px;font-size:12px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#2d3748;outline:none;font-family:inherit;cursor:text}
+.ss-control input:focus{border-color:#68d391;box-shadow:0 0 0 2px rgba(104,211,145,.12)}
+.ss-arrow{position:absolute;right:9px;top:50%;transform:translateY(-50%);pointer-events:none;width:12px;height:12px;stroke:#a0aec0;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.ss-menu{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:50;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.12);max-height:200px;overflow-y:auto;padding:4px}
+.ss-option{padding:8px 10px;font-size:12px;color:#2d3748;border-radius:5px;cursor:pointer}
+.ss-option:hover{background:#f0fff4;color:#276749}
+.ss-option.selected{background:#f0fff4;color:#276749;font-weight:600}
+.ss-empty{padding:10px;font-size:12px;color:#a0aec0;text-align:center}
+
 /* ── Employee Map View ── */
 .map-toggle{display:inline-flex;background:#fff;border:1px solid #cbd5e0;border-radius:20px;padding:2px;gap:2px}
 .map-toggle-btn{padding:5px 18px;border:none;background:none;border-radius:20px;font-size:12.5px;font-weight:600;color:#718096;cursor:pointer;font-family:inherit;transition:all .15s}
@@ -2250,7 +2312,7 @@ function showModule(mod){
    DRIVER MODULE
 ═══════════════════════════════════════ */
 const drivers = [
-  {id:1, fname:'Sakshi', lname:'Shania', mobile:'8178939937', licence:'TN1320140004846', status:'inactive',    vendor:'Ravi Kumar'},
+  {id:1, fname:'Sakshi', lname:'Shania', mobile:'8178939937', licence:'TN1320140004846', status:'inactive',    vendor:'Ravi Kumar', inactiveDate:'12-12-2025'},
   {id:2, fname:'Sakshi', lname:'Shania', mobile:'8178939937', licence:'TN1320140004846', status:'active',      vendor:'Sona Travel'},
   {id:3, fname:'Sakshi', lname:'Shania', mobile:'8178939937', licence:'TN1320140004846', status:'blacklisted', vendor:'Ravi Sharma'},
   {id:4, fname:'Sakshi', lname:'Shania', mobile:'8178939937', licence:'TN1320140004846', status:'temporarily', vendor:'Ravi Sharma'},
@@ -2271,6 +2333,8 @@ function showDriverForm(){
   driverMode = 'create';
   currentDriverId = null;
   resetDriverForm();
+  // Inactive Date is never shown in create mode
+  document.getElementById('d-inactive-date-field').style.display = 'none';
   document.getElementById('driver-form-back-label').textContent = 'Create new driver';
   document.getElementById('driver-listing').style.display = 'none';
   document.getElementById('driver-form').style.display = 'block';
@@ -2311,6 +2375,15 @@ function populateDriverForm(d){
   set('d-fname', d.fname); set('d-lname', d.lname); set('d-mobile', d.mobile); set('d-licence', d.licence);
   const ss = document.getElementById('d-status');
   if(ss){ for(let i=0;i<ss.options.length;i++){ if(ss.options[i].value===d.status){ ss.selectedIndex=i; break; } } }
+  // Inactive Date — only shows when the driver is inactive, pre-filled
+  const inactiveField = document.getElementById('d-inactive-date-field');
+  if(d.status === 'inactive'){
+    inactiveField.style.display = 'block';
+    set('d-inactive-date', d.inactiveDate || '12-12-2025');
+  } else {
+    inactiveField.style.display = 'none';
+    set('d-inactive-date', '');
+  }
 }
 
 function resetDriverForm(){
@@ -2323,7 +2396,16 @@ function handleDriverFormStatus(sel){
   if(val==='temporarily' || val==='blacklisted'){
     tag.style.display='inline-flex';
   } else {
-    tag.style.display = val ? 'none' : 'none';
+    tag.style.display = 'none';
+  }
+  // Inactive Date appears (pre-filled) only when marking inactive in edit mode
+  const inactiveField = document.getElementById('d-inactive-date-field');
+  const inactiveInput = document.getElementById('d-inactive-date');
+  if(driverMode === 'edit' && val === 'inactive'){
+    inactiveField.style.display = 'block';
+    if(!inactiveInput.value) inactiveInput.value = '12-12-2025'; // pre-fill on mark inactive
+  } else {
+    inactiveField.style.display = 'none';
   }
 }
 
